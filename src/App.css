@@ -1,0 +1,155 @@
+/* تنسيقات مستوحاة من تصميم جيمناي الاحترافي والمشرق */
+
+:root {
+  --primary-green: #0a6b57; /* لون أخضر داكن واحترافي */
+  --light-green: #ecfdf5; /* لون خلفية خفيف */
+  --text-color: #111b21; /* لون نص واضح */
+  --bg-color: #ffffff; /* خلفية بيضاء نقية */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+.ai-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* هيدر عصري */
+.ai-header {
+  padding: 30px 40px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ai-logo-icon {
+  width: 50px;
+  height: 50px;
+  color: #10b981; /* أخضر زمردي */
+}
+
+.ai-title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary-green);
+}
+
+.ai-subtitle {
+  margin: 0;
+  font-size: 16px;
+  color: #667781;
+}
+
+/* منطقة الدردشة - خط كبير وواضح */
+.ai-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.ai-speech-bubble {
+  background-color: var(--bg-color);
+  padding: 25px;
+  border-radius: 20px;
+  font-size: 18px; /* خط كبير وواضح */
+  line-height: 1.6;
+  white-space: pre-wrap;
+  border: 1px solid #e2e8f0;
+}
+
+/* المصادر المرجعية (RAG) */
+.ai-sources-section {
+  margin-top: 30px;
+}
+
+.ai-sources-header {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #10b981;
+  position: relative;
+}
+
+.ai-sources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.ai-source-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  background: var(--bg-color);
+}
+
+.ai-source-icon {
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.ai-source-info h4 { margin: 0; font-size: 16px; font-weight: 600; }
+.ai-source-info p { margin: 2px 0 0; font-size: 13px; color: #667781; }
+
+/* الفوتر ومنطقة البحث */
+.ai-footer {
+  padding: 30px 40px;
+  border-top: 1px solid #e2e8f0;
+  background-color: var(--bg-color);
+}
+
+.ai-search-bar {
+  background-color: #f0f2f5;
+  border-radius: 30px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+}
+
+.ai-search-bar input {
+  flex: 1;
+  padding: 15px;
+  font-size: 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.ai-send-btn {
+  background-color: #d1fae5;
+  color: #10b981;
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  cursor: pointer;
+}
+
+.ai-footer-note {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #667781;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
