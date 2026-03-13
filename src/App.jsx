@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Send,
-  FileText,
-  Leaf,
-  Recycle,
-  Mail,
-  ClipboardCheck
-} from 'lucide-react';
+import { Send, FileText, Leaf, Recycle, Mail, ClipboardCheck } from 'lucide-react';
 import './App.css';
 
 export default function App() {
@@ -96,7 +89,7 @@ export default function App() {
         {
           id: Date.now() + 1,
           role: 'ai',
-          text: 'حدثت مشكلة في الاتصال بالخادم.'
+          text: 'عذراً، حدثت مشكلة في الاتصال بالخادم.'
         }
       ]);
     }
@@ -132,7 +125,8 @@ export default function App() {
           padding: '15px 25px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
         }}
       >
 
@@ -190,7 +184,7 @@ export default function App() {
 
         {messages.map((msg) => (
 
-          <div key={msg.id} style={{ marginBottom: '15px' }}>
+          <div key={msg.id} style={{ marginBottom: '15px', display: 'flex', flexDirection: 'column' }}>
 
             <div
               style={{
@@ -202,7 +196,10 @@ export default function App() {
                     }
                   : {
                       backgroundColor: 'white',
-                      color: '#333'
+                      color: '#333',
+                      marginRight: 'auto',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e5e7eb'
                     }),
                 maxWidth: '80%',
                 padding: '12px 18px',
@@ -214,7 +211,7 @@ export default function App() {
               {msg.text}
             </div>
 
-            {/* QUICK BUTTONS تحت رسالة الترحيب */}
+            {/* الأزرار تحت رسالة الترحيب */}
 
             {msg.id === 1 && (
 
@@ -339,6 +336,5 @@ export default function App() {
       </footer>
 
     </div>
-
   );
 }
