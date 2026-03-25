@@ -153,3 +153,45 @@ body {
   justify-content: center;
   gap: 5px;
 }
+.markdown-content {
+  line-height: 1.8;
+  font-size: 16px;
+}
+
+.markdown-content p {
+  margin: 8px 0;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  padding-right: 20px;
+  margin: 10px 0;
+}
+
+.markdown-content li {
+  margin-bottom: 6px;
+}
+
+.markdown-content strong {
+  font-weight: 700;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  margin: 12px 0 8px;
+}
+
+.markdown-content code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.typing-indicator {
+  display: inline-block;
+  padding: 4px 0;
+  color: #355;
+  font-weight: 500;
+}

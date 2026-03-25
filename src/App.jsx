@@ -1,22 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, FileText, Leaf, Recycle, Mail, ClipboardCheck } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Send, FileText, Leaf, Recycle, Mail, ClipboardCheck, Trash2 } from 'lucide-react';
 import './App.css';
 
 export default function App() {
+  const initialMessage = {
+    id: 1,
+    role: 'ai',
+    text:
+      'مرحباً بك في مساعد إعادة التدوير الذكي للجامعات الأردنية 🌱\n\n' +
+      'أنا هنا لمساعدتكم في تعزيز الوعي البيئي وتقديم المعلومات الدقيقة حول ممارسات إعادة التدوير داخل الحرم الجامعي.\n\n' +
+      'يمكنك الضغط على أحد الأسئلة المقترحة بالأسفل أو كتابة سؤالك مباشرة.\n\n' +
+      'كيف يمكنني مساعدتك اليوم؟'
+  };
 
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      role: 'ai',
-      text:
-        'مرحباً بك في مساعد إعادة التدوير الذكي للجامعات الأردنية 🌱\n\n' +
-        'أنا هنا لمساعدتكم في تعزيز الوعي البيئي وتقديم المعلومات الدقيقة حول ممارسات إعادة التدوير داخل الحرم الجامعي.\n\n' +
-        'يمكنك الضغط على أحد الأسئلة المقترحة بالأسفل أو كتابة سؤالك مباشرة.\n\n' +
-        'كيف يمكنني مساعدتك اليوم؟'
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = localStorage.getItem('chatMessages');
+    try {
+      return savedMessages ? JSON.parse(savedMessages) : [initialMessage];
+    } catch {
+      return [initialMessage];
     }
-  ]);
+  });
 
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   const quickQuestions = [
@@ -38,12 +47,20 @@ export default function App() {
   ];
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
   }, [messages]);
 
-  const sendMessage = async (messageText) => {
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
-    if (!messageText.trim()) return;
+  const clearChat = () => {
+    setMessages([initialMessage]);
+    localStorage.removeItem('chatMessages');
+  };
+
+  const sendMessage = async (messageText) => {
+    if (!messageText.trim() || isLoading) return;
 
     const userMessage = {
       id: Date.now(),
@@ -51,47 +68,52 @@ export default function App() {
       text: messageText
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
+    setIsLoading(true);
 
     try {
+      const response = await fetch('/.netlify/functions/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          question: messageText
+        })
+      });
 
-const response = await fetch('/.netlify/functions/chat', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    question: messageText
-  })
-});
+      const data = await response.json();
+      console.log('Function response:', data);
 
-const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.details || data.error || 'Unknown server error');
+      }
 
-const aiMessage = {
-  id: Date.now() + 1,
-  role: 'ai',
-  text:
-    data.reply ||
-    data.output ||
-    data.text ||
-    'تم استلام رسالتك بنجاح من نظام n8n.'
-};
+      const aiMessage = {
+        id: Date.now() + 1,
+        role: 'ai',
+        text:
+          data.reply ||
+          data.output ||
+          data.text ||
+          'تم استلام رسالتك بنجاح من نظام n8n.'
+      };
 
-      setMessages(prev => [...prev, aiMessage]);
-
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
+      console.error('Connection Error:', error);
 
-      console.error(error);
-
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           role: 'ai',
-          text: 'عذراً، حدثت مشكلة في الاتصال بالخادم.'
+          text: 'الخادم غير متاح حالياً، حاول لاحقاً.'
         }
       ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -105,7 +127,6 @@ const aiMessage = {
   };
 
   return (
-
     <div
       dir="rtl"
       className="ai-container"
@@ -116,9 +137,6 @@ const aiMessage = {
         flexDirection: 'column'
       }}
     >
-
-      {/* HEADER */}
-
       <header
         style={{
           backgroundColor: '#1b4332',
@@ -129,9 +147,7 @@ const aiMessage = {
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
         }}
       >
-
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-
           <Recycle size={35} style={{ color: '#40916c' }} />
 
           <div>
@@ -143,36 +159,54 @@ const aiMessage = {
               نظام ذكي لتعزيز الوعي بإعادة التدوير في الجامعات الأردنية
             </p>
           </div>
-
         </div>
 
-        <button
-          onClick={() =>
-            window.open(
-              'https://forms.gle/W3xtwb49j7NsWHF59',
-              '_blank'
-            )
-          }
-          style={{
-            backgroundColor: '#fca311',
-            color: '#14213d',
-            border: 'none',
-            padding: '10px 18px',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <ClipboardCheck size={18} />
-          <span>شاركنا رأيك بالاستبيان</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={clearChat}
+            style={{
+              backgroundColor: '#ffffff',
+              color: '#1b4332',
+              border: 'none',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            title="مسح المحادثة"
+          >
+            <Trash2 size={16} />
+            <span>مسح المحادثة</span>
+          </button>
 
+          <button
+            onClick={() =>
+              window.open(
+                'https://forms.gle/W3xtwb49j7NsWHF59',
+                '_blank'
+              )
+            }
+            style={{
+              backgroundColor: '#fca311',
+              color: '#14213d',
+              border: 'none',
+              padding: '10px 18px',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <ClipboardCheck size={18} />
+            <span>شاركنا رأيك بالاستبيان</span>
+          </button>
+        </div>
       </header>
-
-      {/* MAIN */}
 
       <main
         style={{
@@ -181,11 +215,15 @@ const aiMessage = {
           overflowY: 'auto'
         }}
       >
-
         {messages.map((msg) => (
-
-          <div key={msg.id} style={{ marginBottom: '15px', display: 'flex', flexDirection: 'column' }}>
-
+          <div
+            key={msg.id}
+            style={{
+              marginBottom: '15px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
             <div
               style={{
                 ...(msg.role === 'user'
@@ -204,17 +242,22 @@ const aiMessage = {
                 maxWidth: '80%',
                 padding: '12px 18px',
                 borderRadius: '15px',
-                lineHeight: '1.5',
+                lineHeight: '1.7',
                 whiteSpace: 'pre-wrap'
               }}
             >
-              {msg.text}
+              {msg.role === 'ai' ? (
+                <div className="markdown-content">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {msg.text}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                msg.text
+              )}
             </div>
 
-            {/* الأزرار تحت رسالة الترحيب */}
-
             {msg.id === 1 && (
-
               <div
                 style={{
                   marginTop: '12px',
@@ -223,13 +266,10 @@ const aiMessage = {
                   flexWrap: 'wrap'
                 }}
               >
-
                 {quickQuestions.map((item, index) => {
-
                   const Icon = item.icon;
 
                   return (
-
                     <button
                       key={index}
                       onClick={() => handleQuickQuestion(item.prompt)}
@@ -245,30 +285,44 @@ const aiMessage = {
                         cursor: 'pointer'
                       }}
                     >
-
                       <Icon size={14} color="#1b4332" />
-
                       {item.label}
-
                     </button>
-
                   );
-
                 })}
-
               </div>
-
             )}
-
           </div>
-
         ))}
 
+        {isLoading && (
+          <div
+            style={{
+              marginBottom: '15px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                color: '#333',
+                marginRight: 'auto',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                border: '1px solid #e5e7eb',
+                maxWidth: '80%',
+                padding: '12px 18px',
+                borderRadius: '15px',
+                lineHeight: '1.5'
+              }}
+            >
+              <div className="typing-indicator">جاري التفكير...</div>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
-
       </main>
-
-      {/* INPUT */}
 
       <footer
         style={{
@@ -277,7 +331,6 @@ const aiMessage = {
           borderTop: '1px solid #e2e8f0'
         }}
       >
-
         <div
           style={{
             display: 'flex',
@@ -288,15 +341,13 @@ const aiMessage = {
             alignItems: 'center'
           }}
         >
-
           <input
             type="text"
             placeholder="اسأل عن طرق فرز النفايات..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === 'Enter' && handleSendMessage()
-            }
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+            disabled={isLoading}
             style={{
               flex: 1,
               border: 'none',
@@ -308,18 +359,19 @@ const aiMessage = {
 
           <button
             onClick={handleSendMessage}
+            disabled={isLoading}
             style={{
               background: '#1b4332',
               color: 'white',
               border: 'none',
               borderRadius: '50%',
               padding: '10px',
-              cursor: 'pointer'
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              opacity: isLoading ? 0.7 : 1
             }}
           >
             <Send size={18} />
           </button>
-
         </div>
 
         <div
@@ -332,9 +384,7 @@ const aiMessage = {
         >
           <Mail size={10} /> للتواصل العلمي: yarahyari41@gmail.com
         </div>
-
       </footer>
-
     </div>
   );
 }
