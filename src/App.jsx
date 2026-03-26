@@ -51,23 +51,23 @@ export default function App() {
 
   const quickQuestions = [
     {
-      label: 'أين أجد حاويات البلاستيك؟',
-      prompt: 'أين أجد حاويات البلاستيك داخل الحرم الجامعي؟',
+      label: 'إرشادات فرز النفايات',
+      prompt: 'كيف يمكن فرز النفايات بشكل صحيح داخل الحرم الجامعي؟',
       icon: Recycle
     },
     {
-      label: 'كيف أعيد تدوير الورق؟',
-      prompt: 'كيف يمكن إعادة تدوير الورق بشكل صحيح داخل الجامعة؟',
+      label: 'أنواع النفايات',
+      prompt: 'ما هي أنواع النفايات التي يمكن أن تنتج داخل الجامعة؟',
       icon: FileText
     },
     {
-      label: 'نصائح لتقليل النفايات',
-      prompt: 'ما أهم النصائح لتقليل النفايات داخل الحرم الجامعي؟',
+      label: 'أهمية إعادة التدوير',
+      prompt: 'ما أهمية إعادة التدوير للبيئة والمجتمع؟',
       icon: Leaf
     },
     {
-      label: 'سياسة الاستدامة',
-      prompt: 'ما أهمية الاستدامة البيئية في الجامعات؟',
+      label: 'ممارسات الاستدامة',
+      prompt: 'ما أهم ممارسات الاستدامة البيئية التي يمكن تطبيقها داخل الجامعة؟',
       icon: Sparkles
     }
   ];
@@ -189,8 +189,8 @@ export default function App() {
               <Recycle size={20} />
             </div>
             <div>
-              <h2>إيكو نود</h2>
-              <p>مساعد التدوير الجامعي</p>
+              <h2>المساعد الذكي</h2>
+              <p>لإعادة التدوير في الجامعات</p>
             </div>
           </div>
 
@@ -225,16 +225,15 @@ export default function App() {
 
       <div className="chat-layout">
         <header className="topbar">
-          <div className="topbar-left">
-            <button
-              className="icon-btn"
-              onClick={() => setSidebarOpen((prev) => !prev)}
-              type="button"
-              title="إظهار/إخفاء القائمة الجانبية"
-            >
-              <PanelRight size={18} />
-            </button>
+          <div className="topbar-brand">
+            <Recycle size={30} className="topbar-logo" />
+            <div>
+              <h1>Recycling AI Assistant</h1>
+              <p>نظام ذكي لتعزيز الوعي بإعادة التدوير في الجامعات الأردنية</p>
+            </div>
+          </div>
 
+          <div className="topbar-left">
             <button
               className="survey-btn"
               onClick={() =>
@@ -245,14 +244,15 @@ export default function App() {
               <ClipboardCheck size={18} />
               <span>شاركنا رأيك بالاستبيان</span>
             </button>
-          </div>
 
-          <div className="topbar-brand">
-            <div>
-              <h1>Recycling AI Assistant</h1>
-              <p>نظام ذكي لتعزيز الوعي بإعادة التدوير في الجامعات الأردنية</p>
-            </div>
-            <Recycle size={30} className="topbar-logo" />
+            <button
+              className="icon-btn"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              type="button"
+              title="إظهار/إخفاء القائمة الجانبية"
+            >
+              <PanelRight size={18} />
+            </button>
           </div>
         </header>
 
@@ -357,7 +357,7 @@ export default function App() {
           </div>
 
           <div className="footer-email">
-            <Mail size={12} />
+            <Mail size={12} className="footer-email-icon" />
             <span>للتواصل العلمي: yarahyari41@gmail.com</span>
           </div>
 

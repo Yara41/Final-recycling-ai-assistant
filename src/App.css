@@ -18,6 +18,7 @@ body {
   margin: 0;
   background: var(--bg-main);
   color: var(--text-main);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .app-shell {
@@ -69,7 +70,7 @@ body {
 
 .brand-box h2 {
   margin: 0;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--primary-green-dark);
 }
@@ -111,7 +112,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.2s ease;
@@ -124,7 +125,7 @@ body {
 .history-box h3 {
   margin: 0 0 16px;
   color: #7d8b84;
-  font-size: 26px;
+  font-size: 18px;
 }
 
 .history-empty {
@@ -147,7 +148,7 @@ body {
   align-items: center;
   gap: 10px;
   color: #2f463b;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .history-dot {
@@ -186,7 +187,7 @@ body {
   height: 42px;
   border: none;
   border-radius: 12px;
-  background: rgba(255,255,255,0.14);
+  background: rgba(255, 255, 255, 0.14);
   color: white;
   cursor: pointer;
   display: flex;
@@ -242,10 +243,10 @@ body {
 }
 
 .welcome-icon {
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   margin: 0 auto 22px;
-  border-radius: 28px;
+  border-radius: 24px;
   background: linear-gradient(135deg, var(--soft-green), #cde8da);
   display: flex;
   align-items: center;
@@ -291,12 +292,12 @@ body {
   font-weight: 700;
   color: #2f3e35;
   transition: 0.2s ease;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
 .quick-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
   border-color: #cfe7d9;
 }
 
@@ -348,7 +349,7 @@ body {
   background: white;
   color: #223028;
   border: 1px solid #e1e9e4;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
   border-top-left-radius: 8px;
 }
 
@@ -404,7 +405,9 @@ body {
 }
 
 @keyframes blink {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     opacity: 0.3;
     transform: translateY(0);
   }
@@ -429,7 +432,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.04);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
 }
 
 .chat-input {
@@ -470,6 +473,12 @@ body {
   color: #7b8c84;
   font-size: 11px;
   direction: rtl;
+  text-align: center;
+}
+
+.footer-email-icon {
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .clear-chat-link {
