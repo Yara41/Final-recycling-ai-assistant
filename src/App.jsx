@@ -27,7 +27,8 @@ export default function App() {
   };
 
   const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem('chatMessages');
+    // تم تغيير الاسم هنا ليكون خاصاً بالجامعات فقط
+    const savedMessages = localStorage.getItem('uni_chat_messages');
     try {
       return savedMessages ? JSON.parse(savedMessages) : [initialMessage];
     } catch {
@@ -36,7 +37,8 @@ export default function App() {
   });
 
   const [chatHistory, setChatHistory] = useState(() => {
-    const savedHistory = localStorage.getItem('chatHistory');
+    // تم تغيير الاسم هنا ليكون خاصاً بالجامعات فقط
+    const savedHistory = localStorage.getItem('uni_chat_history');
     try {
       return savedHistory ? JSON.parse(savedHistory) : [];
     } catch {
@@ -73,11 +75,11 @@ export default function App() {
   ];
 
   useEffect(() => {
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
+    localStorage.setItem('uni_chat_messages', JSON.stringify(messages));
   }, [messages]);
 
   useEffect(() => {
-    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+    localStorage.setItem('uni_chat_history', JSON.stringify(chatHistory));
   }, [chatHistory]);
 
   useEffect(() => {
@@ -91,7 +93,6 @@ export default function App() {
 
   const saveToHistory = (question) => {
     const title = createChatTitle(question);
-
     setChatHistory((prev) => {
       const updated = [title, ...prev.filter((item) => item !== title)];
       return updated.slice(0, 6);
@@ -100,7 +101,7 @@ export default function App() {
 
   const clearChat = () => {
     setMessages([initialMessage]);
-    localStorage.setItem('chatMessages', JSON.stringify([initialMessage]));
+    localStorage.setItem('uni_chat_messages', JSON.stringify([initialMessage]));
   };
 
   const startNewChat = () => {
@@ -125,12 +126,8 @@ export default function App() {
     try {
       const response = await fetch('/.netlify/functions/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          question: messageText
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: messageText })
       });
 
       const data = await response.json();
@@ -142,17 +139,12 @@ export default function App() {
       const aiMessage = {
         id: Date.now() + 1,
         role: 'ai',
-        text:
-          data.reply ||
-          data.output ||
-          data.text ||
-          'تم استلام رسالتك بنجاح من النظام.'
+        text: data.reply || data.output || data.text || 'تم استلام رسالتك بنجاح من النظام.'
       };
 
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error('Connection Error:', error);
-
       setMessages((prev) => [
         ...prev,
         {
@@ -193,7 +185,6 @@ export default function App() {
               <p>لإعادة التدوير في الجامعات</p>
             </div>
           </div>
-
           <button className="status-badge" type="button">
             <span className="status-dot"></span>
             AI Active
@@ -207,7 +198,6 @@ export default function App() {
 
         <div className="history-box">
           <h3>السجل الأخير</h3>
-
           {chatHistory.length === 0 ? (
             <p className="history-empty">لا توجد محادثات محفوظة بعد</p>
           ) : (
@@ -236,9 +226,7 @@ export default function App() {
           <div className="topbar-left">
             <button
               className="survey-btn"
-              onClick={() =>
-                window.open('https://forms.gle/W3xtwb49j7NsWHF59', '_blank')
-              }
+              onClick={() => window.open('https://forms.gle/W3xtwb49j7NsWHF59', '_blank')}
               type="button"
             >
               <ClipboardCheck size={18} />
@@ -249,7 +237,6 @@ export default function App() {
               className="icon-btn"
               onClick={() => setSidebarOpen((prev) => !prev)}
               type="button"
-              title="إظهار/إخفاء القائمة الجانبية"
             >
               <PanelRight size={18} />
             </button>
@@ -262,17 +249,11 @@ export default function App() {
               <div className="welcome-icon">
                 <Recycle size={40} />
               </div>
-
               <h2>حرم جامعي مستدام، مستقبل أذكى</h2>
-              <p>
-                اسألني عن إعادة التدوير، فرز النفايات، والممارسات البيئية داخل
-                الحرم الجامعي، وسأساعدك بمعلومات واضحة وعملية.
-              </p>
-
+              <p>اسألني عن إعادة التدوير داخل الجامعة وسأساعدك بمعلومات عملية.</p>
               <div className="quick-grid">
                 {quickQuestions.map((item, index) => {
                   const Icon = item.icon;
-
                   return (
                     <button
                       key={index}
@@ -292,22 +273,11 @@ export default function App() {
           ) : (
             <section className="messages-section">
               {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`message-row ${
-                    msg.role === 'user' ? 'user-row' : 'ai-row'
-                  }`}
-                >
-                  <div
-                    className={`message-bubble ${
-                      msg.role === 'user' ? 'user-bubble' : 'ai-bubble'
-                    }`}
-                  >
+                <div key={msg.id} className={`message-row ${msg.role === 'user' ? 'user-row' : 'ai-row'}`}>
+                  <div className={`message-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`}>
                     {msg.role === 'ai' ? (
                       <div className="markdown-content">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {msg.text}
-                        </ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                       </div>
                     ) : (
                       msg.text
@@ -315,20 +285,11 @@ export default function App() {
                   </div>
                 </div>
               ))}
-
               {isLoading && (
                 <div className="message-row ai-row">
-                  <div className="message-bubble ai-bubble">
-                    <div className="typing-wrap">
-                      <span className="typing-dot"></span>
-                      <span className="typing-dot"></span>
-                      <span className="typing-dot"></span>
-                      <span className="typing-text">جاري التفكير...</span>
-                    </div>
-                  </div>
+                  <div className="message-bubble ai-bubble">جاري التفكير...</div>
                 </div>
               )}
-
               <div ref={messagesEndRef} />
             </section>
           )}
@@ -345,22 +306,14 @@ export default function App() {
               disabled={isLoading}
               className="chat-input"
             />
-
-            <button
-              onClick={handleSendMessage}
-              disabled={isLoading}
-              className="send-btn"
-              type="button"
-            >
+            <button onClick={handleSendMessage} disabled={isLoading} className="send-btn" type="button">
               <Send size={18} />
             </button>
           </div>
-
           <div className="footer-email">
             <Mail size={12} className="footer-email-icon" />
             <span>للتواصل العلمي: yarahyari41@gmail.com</span>
           </div>
-
           <button className="clear-chat-link" onClick={clearChat} type="button">
             <Trash2 size={14} />
             <span>مسح المحادثة الحالية</span>
