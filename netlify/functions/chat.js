@@ -6,7 +6,7 @@ export async function handler(event) {
 
 
 
-    const response = await fetch('https://n8n.your-server.com/webhook/recycling-assistant', {
+    const response = await fetch('https://n8n.your-server-link.com/webhook/recycling-assistant', {
 
       method: 'POST',
 
