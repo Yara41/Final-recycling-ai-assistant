@@ -124,11 +124,11 @@ export default function App() {
     saveToHistory(messageText);
 
     try {
-      const response = await fetch('/.netlify/functions/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: messageText })
-      });
+      const response = await fetch('https://n8n.your-server.com/webhook/recycling-assistant', { 
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ question: messageText })
+});
 
       const data = await response.json();
 
