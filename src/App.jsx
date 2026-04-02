@@ -124,7 +124,7 @@ export default function App() {
     saveToHistory(messageText);
 
     try {
-      const response = await fetch('https://n8n.your-server.com/webhook/recycling-assistant', { 
+      const response = await fetch('http://13.61.19.235:5678/webhook/recycling-assistant', { 
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ question: messageText })
