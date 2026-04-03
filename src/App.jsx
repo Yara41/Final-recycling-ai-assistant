@@ -27,7 +27,6 @@ export default function App() {
   };
 
   const [messages, setMessages] = useState(() => {
-    // تم تغيير الاسم هنا ليكون خاصاً بالجامعات فقط
     const savedMessages = localStorage.getItem('uni_chat_messages');
     try {
       return savedMessages ? JSON.parse(savedMessages) : [initialMessage];
@@ -37,7 +36,6 @@ export default function App() {
   });
 
   const [chatHistory, setChatHistory] = useState(() => {
-    // تم تغيير الاسم هنا ليكون خاصاً بالجامعات فقط
     const savedHistory = localStorage.getItem('uni_chat_history');
     try {
       return savedHistory ? JSON.parse(savedHistory) : [];
@@ -123,15 +121,13 @@ export default function App() {
     setIsLoading(true);
     saveToHistory(messageText);
 
-   fetch('https://janita-postnodular-laurine.ngrok-free.dev/webhook/recycling-assistant', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    question: messageText
-  })
-});
+    try {
+      // التعديل المهم هنا: نرسل الطلب لملف الـ handler الداخلي
+      const response = await fetch('/.netlify/functions/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: messageText })
+      });
 
       const data = await response.json();
 
