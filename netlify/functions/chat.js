@@ -2,8 +2,8 @@ export async function handler(event) {
   try {
     const body = JSON.parse(event.body);
 
-    // الرابط الثابت للسيرفر (مباشر ومضمون)
-    const response = await fetch('http://13.61.19.235:5678/webhook/recycling-assistant', {
+    // 🚀 التعديل هون: غيرنا الرابط لـ uni-assistant عشان يطابق n8n
+    const response = await fetch('http://13.61.19.235:5678/webhook/uni-assistant', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
