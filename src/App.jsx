@@ -17,7 +17,7 @@ import './App.css';
 
 export default function App() {
   const welcomeText =
-    'مرحباً بك في مساعد إعادة التدوير الذكي للجامعات الأردنية 🌱\n\n' +
+    'مرحباً بك في EcoWasteAI - مساعد إعادة التدوير الذكي للجامعات الأردنية 🌱\n\n' +
     'ابدأ بسؤال بسيط حول إعادة التدوير أو الاستدامة، وسأرشدك إلى معلومات عملية تدعم بيئة جامعية أفضل.';
 
   const initialMessage = {
@@ -122,7 +122,6 @@ export default function App() {
     saveToHistory(messageText);
 
     try {
-      // التعديل المهم هنا: نرسل الطلب لملف الـ handler الداخلي
       const response = await fetch('/.netlify/functions/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -180,8 +179,9 @@ export default function App() {
               <Recycle size={20} />
             </div>
             <div>
-              <h2>المساعد الذكي</h2>
-              <p>لإعادة التدوير في الجامعات</p>
+              {/* تعديل الاسم هنا في السايد بار */}
+              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#124734' }}>EcoWasteAI</h2>
+              <p style={{ fontSize: '11px' }}>لإعادة التدوير في الجامعات</p>
             </div>
           </div>
           <button className="status-badge" type="button">
@@ -210,6 +210,26 @@ export default function App() {
             </ul>
           )}
         </div>
+
+        <div className="links-group" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px', padding: '0 5px' }}>
+          <button 
+            className="link-card-btn" 
+            onClick={() => window.open('https://www.ammancity.gov.jo', '_blank')}
+            style={{ textAlign: 'right', padding: '12px', borderRadius: '12px', border: '1px solid #dde7e1', background: 'white', cursor: 'pointer' }}
+          >
+            <div style={{ fontWeight: '700', fontSize: '14px', color: '#165c43' }}>موقع أمانة عمّان</div>
+            <div style={{ fontSize: '11px', color: '#5b6b63' }}>خدمات البلدية وإدارة النفايات في العاصمة</div>
+          </button>
+
+          <button 
+            className="link-card-btn" 
+            onClick={() => window.open('https://avtr.jo', '_blank')}
+            style={{ textAlign: 'right', padding: '12px', borderRadius: '12px', border: '1px solid #dde7e1', background: 'white', cursor: 'pointer' }}
+          >
+            <div style={{ fontWeight: '700', fontSize: '14px', color: '#165c43' }}>مبادرة AVTR</div>
+            <div style={{ fontSize: '11px', color: '#5b6b63' }}>منصة لإعادة التدوير وتعزيز المشاركة المجتمعية</div>
+          </button>
+        </div>
       </aside>
 
       <div className="chat-layout">
@@ -217,8 +237,9 @@ export default function App() {
           <div className="topbar-brand">
             <Recycle size={30} className="topbar-logo" />
             <div>
-              <h1>Recycling AI Assistant</h1>
-              <p>نظام ذكي لتعزيز الوعي بإعادة التدوير في الجامعات الأردنية</p>
+              {/* تعديل الاسم الرئيسي هنا */}
+              <h1 style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '0.5px' }}>EcoWasteAI</h1>
+              <p style={{ fontSize: '12px' }}>نظام ذكي لتعزيز الوعي بإعادة التدوير في الجامعات الأردنية</p>
             </div>
           </div>
 
@@ -248,7 +269,7 @@ export default function App() {
               <div className="welcome-icon">
                 <Recycle size={40} />
               </div>
-              <h2>حرم جامعي مستدام، مستقبل أذكى</h2>
+              <h2>حرم جامعي مستدام، مستقبل أذكى 🌱</h2>
               <p>اسألني عن إعادة التدوير داخل الجامعة وسأساعدك بمعلومات عملية.</p>
               <div className="quick-grid">
                 {quickQuestions.map((item, index) => {
@@ -298,7 +319,7 @@ export default function App() {
           <div className="input-shell">
             <input
               type="text"
-              placeholder="اسأل عن طرق فرز النفايات..."
+              placeholder="اسأل EcoWasteAI عن طرق فرز النفايات..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
