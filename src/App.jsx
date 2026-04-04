@@ -179,7 +179,6 @@ export default function App() {
               <Recycle size={20} />
             </div>
             <div>
-              {/* تعديل الاسم هنا في السايد بار */}
               <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#124734' }}>EcoWasteAI</h2>
               <p style={{ fontSize: '11px' }}>لإعادة التدوير في الجامعات</p>
             </div>
@@ -210,26 +209,7 @@ export default function App() {
             </ul>
           )}
         </div>
-
-        <div className="links-group" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px', padding: '0 5px' }}>
-          <button 
-            className="link-card-btn" 
-            onClick={() => window.open('https://www.ammancity.gov.jo', '_blank')}
-            style={{ textAlign: 'right', padding: '12px', borderRadius: '12px', border: '1px solid #dde7e1', background: 'white', cursor: 'pointer' }}
-          >
-            <div style={{ fontWeight: '700', fontSize: '14px', color: '#165c43' }}>موقع أمانة عمّان</div>
-            <div style={{ fontSize: '11px', color: '#5b6b63' }}>خدمات البلدية وإدارة النفايات في العاصمة</div>
-          </button>
-
-          <button 
-            className="link-card-btn" 
-            onClick={() => window.open('https://avtr.jo', '_blank')}
-            style={{ textAlign: 'right', padding: '12px', borderRadius: '12px', border: '1px solid #dde7e1', background: 'white', cursor: 'pointer' }}
-          >
-            <div style={{ fontWeight: '700', fontSize: '14px', color: '#165c43' }}>مبادرة AVTR</div>
-            <div style={{ fontSize: '11px', color: '#5b6b63' }}>منصة لإعادة التدوير وتعزيز المشاركة المجتمعية</div>
-          </button>
-        </div>
+        {/* تم حذف روابط أمانة عمان من هنا بناءً على طلبك */}
       </aside>
 
       <div className="chat-layout">
@@ -237,8 +217,7 @@ export default function App() {
           <div className="topbar-brand">
             <Recycle size={30} className="topbar-logo" />
             <div>
-              {/* تعديل الاسم الرئيسي هنا */}
-              <h1 style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '0.5px' }}>EcoWasteAI</h1>
+              <h1 style={{ fontSize: '26px', fontWeight: '900' }}>EcoWasteAI</h1>
               <p style={{ fontSize: '12px' }}>نظام ذكي لتعزيز الوعي بإعادة التدوير في الجامعات الأردنية</p>
             </div>
           </div>
@@ -319,7 +298,7 @@ export default function App() {
           <div className="input-shell">
             <input
               type="text"
-              placeholder="اسأل EcoWasteAI عن طرق فرز النفايات..."
+              placeholder="اسأل EcoWasteAI..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
