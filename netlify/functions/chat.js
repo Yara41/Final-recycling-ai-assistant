@@ -5,7 +5,8 @@ const GEMINI_MODEL = "gemini-embedding-001";
 // llama-3.3-70b-versatile was retired by Groq on 16 Aug 2026.
 // The function tries these models in order and uses the first one that works.
 const GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"];
-const MATCH_COUNT = 6;
+const FETCH_COUNT = 30; // ask Supabase for more rows, because many documents are stored as duplicates
+const USE_COUNT = 6;    // number of DISTINCT documents sent to Groq
 const MAX_CONTEXT_CHARS = 6000;
 const MAX_QUESTION_CHARS = 1000;
 
@@ -76,7 +77,7 @@ async function searchDocuments(embedding) {
       },
       body: JSON.stringify({
         query_embedding: embedding,
-        match_count: MATCH_COUNT,
+        match_count: FETCH_COUNT,
         filter: {},
       }),
     },
@@ -91,9 +92,20 @@ async function searchDocuments(embedding) {
 }
 
 function buildContext(rows) {
+  const seen = new Set();
+  const unique = [];
+  for (const row of rows) {
+    const text = String(row.content || "").trim();
+    const key = text.replace(/\s+/g, " ");
+    if (!text || seen.has(key)) continue;
+    seen.add(key);
+    unique.push(text);
+    if (unique.length >= USE_COUNT) break;
+  }
+
   let context = "";
-  rows.forEach((row, i) => {
-    const piece = `[${i + 1}] ${String(row.content || "").trim()}\n\n`;
+  unique.forEach((text, i) => {
+    const piece = `[${i + 1}] ${text}\n\n`;
     if (context.length + piece.length <= MAX_CONTEXT_CHARS) context += piece;
   });
   return context.trim();
