@@ -172,7 +172,7 @@ export default function App() {
         {
           id: Date.now() + 1,
           role: 'ai',
-          text: 'الخادم غير متاح حالياً، حاول لاحقاً.'
+          text: 'الخادم غير متاح حالياً، حاول لاحقاً.\n\n(تفاصيل الخطأ: ' + (error?.message || 'unknown') + ')'
         }
       ]);
     } finally {
