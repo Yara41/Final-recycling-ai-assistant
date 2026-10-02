@@ -27,6 +27,23 @@ async function timedFetch(url, options) {
   }
 }
 
+// Describes the key type WITHOUT revealing it.
+function describeKey(key) {
+  if (!key) return "missing";
+  if (key.startsWith("sb_secret_")) return "new SECRET key (sb_secret_...) - good";
+  if (key.startsWith("sb_publishable_")) return "new PUBLISHABLE key (sb_publishable_...) - this is the anon-type key, NOT enough";
+  if (key.startsWith("eyJ")) {
+    try {
+      const payload = JSON.parse(Buffer.from(key.split(".")[1], "base64").toString("utf8"));
+      const ref = payload.ref ? `, project ref: ${payload.ref}` : "";
+      return `legacy JWT key, role = ${payload.role}${ref}` + (payload.role === "service_role" ? " - good" : " - NOT enough");
+    } catch {
+      return "looks like a JWT but could not be decoded";
+    }
+  }
+  return `unknown format (length ${key.length}, starts with "${key.slice(0, 4)}")`;
+}
+
 function reply(lines) {
   return {
     statusCode: 200,
@@ -99,9 +116,31 @@ export async function handler(event) {
     return reply(report);
   }
 
+  // STEP 2a: key type + direct table check
+  const base = process.env.SUPABASE_URL.replace(/\/+$/, "");
+  report.push(`SUPABASE_URL host: ${base.replace(/^https?:\/\//, "")}`);
+  report.push(`SUPABASE_KEY type: ${describeKey(process.env.SUPABASE_KEY)}`);
+  try {
+    const res = await timedFetch(`${base}/rest/v1/documents?select=id&limit=1`, {
+      headers: {
+        apikey: process.env.SUPABASE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_KEY}`,
+        Prefer: "count=exact",
+      },
+    });
+    const range = res.headers.get("content-range") || "none";
+    const text = await res.text();
+    if (!res.ok) {
+      report.push(`STEP 2a: direct read of table "documents" FAILED - HTTP ${res.status}: ${redact(text)}`);
+    } else {
+      report.push(`STEP 2a: direct read of table "documents" OK - content-range: ${range} (the number after / is the total rows this key can see)`);
+    }
+  } catch (err) {
+    report.push(`STEP 2a: direct read FAILED - ${redact(err.message)}`);
+  }
+
   // STEP 2: Supabase match_documents
   try {
-    const base = process.env.SUPABASE_URL.replace(/\/+$/, "");
     const res = await timedFetch(`${base}/rest/v1/rpc/match_documents`, {
       method: "POST",
       headers: {
