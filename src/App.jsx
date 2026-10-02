@@ -91,6 +91,7 @@ export default function App() {
 
   const saveToHistory = (question) => {
     const title = createChatTitle(question);
+
     setChatHistory((prev) => {
       const updated = [title, ...prev.filter((item) => item !== title)];
       return updated.slice(0, 6);
@@ -99,7 +100,10 @@ export default function App() {
 
   const clearChat = () => {
     setMessages([initialMessage]);
-    localStorage.setItem('uni_chat_messages', JSON.stringify([initialMessage]));
+    localStorage.setItem(
+      'uni_chat_messages',
+      JSON.stringify([initialMessage])
+    );
   };
 
   const startNewChat = () => {
@@ -124,25 +128,45 @@ export default function App() {
     try {
       const response = await fetch('/.netlify/functions/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: messageText })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          question: messageText
+        })
       });
 
       const data = await response.json();
 
+      console.log('Chat response:', data);
+
       if (!response.ok) {
-        throw new Error(data.details || data.error || 'Unknown server error');
+        throw new Error(
+          data.details ||
+          data.error ||
+          'Unknown server error'
+        );
       }
+
+      const answer =
+        data.answer ||
+        data.reply ||
+        data.output ||
+        data.text;
 
       const aiMessage = {
         id: Date.now() + 1,
         role: 'ai',
-        text: data.reply || data.output || data.text || 'تم استلام رسالتك بنجاح من النظام.'
+        text:
+          answer ||
+          'لم تصل إجابة من الخادم. يرجى المحاولة مرة أخرى.'
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+
     } catch (error) {
       console.error('Connection Error:', error);
+
       setMessages((prev) => [
         ...prev,
         {
@@ -172,60 +196,122 @@ export default function App() {
 
   return (
     <div className="app-shell" dir="rtl">
+
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+
         <div className="sidebar-header">
+
           <div className="brand-box">
+
             <div className="brand-icon">
               <Recycle size={20} />
             </div>
+
             <div>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#124734' }}>EcoWasteAI</h2>
-              <p style={{ fontSize: '11px' }}>لإعادة التدوير في الجامعات</p>
+              <h2
+                style={{
+                  fontSize: '22px',
+                  fontWeight: '800',
+                  color: '#124734'
+                }}
+              >
+                EcoWasteAI
+              </h2>
+
+              <p style={{ fontSize: '11px' }}>
+                لإعادة التدوير في الجامعات
+              </p>
             </div>
+
           </div>
-          <button className="status-badge" type="button">
+
+          <button
+            className="status-badge"
+            type="button"
+          >
             <span className="status-dot"></span>
             AI Active
           </button>
+
         </div>
 
-        <button className="new-chat-btn" onClick={startNewChat} type="button">
+        <button
+          className="new-chat-btn"
+          onClick={startNewChat}
+          type="button"
+        >
           <Plus size={16} />
           <span>محادثة جديدة</span>
         </button>
 
         <div className="history-box">
+
           <h3>السجل الأخير</h3>
+
           {chatHistory.length === 0 ? (
-            <p className="history-empty">لا توجد محادثات محفوظة بعد</p>
+            <p className="history-empty">
+              لا توجد محادثات محفوظة بعد
+            </p>
           ) : (
             <ul className="history-list">
+
               {chatHistory.map((item, index) => (
-                <li key={index} className="history-item">
+                <li
+                  key={index}
+                  className="history-item"
+                >
                   <span className="history-dot"></span>
                   <span>{item}</span>
                 </li>
               ))}
+
             </ul>
           )}
+
         </div>
-        {/* تم حذف روابط أمانة عمان من هنا بناءً على طلبك */}
+
       </aside>
 
       <div className="chat-layout">
+
         <header className="topbar">
+
           <div className="topbar-brand">
-            <Recycle size={30} className="topbar-logo" />
+
+            <Recycle
+              size={30}
+              className="topbar-logo"
+            />
+
             <div>
-              <h1 style={{ fontSize: '26px', fontWeight: '900' }}>EcoWasteAI</h1>
-              <p style={{ fontSize: '12px' }}>نظام ذكي لتعزيز الوعي بإعادة التدوير في الجامعات الأردنية</p>
+
+              <h1
+                style={{
+                  fontSize: '26px',
+                  fontWeight: '900'
+                }}
+              >
+                EcoWasteAI
+              </h1>
+
+              <p style={{ fontSize: '12px' }}>
+                نظام ذكي لتعزيز الوعي بإعادة التدوير في الجامعات الأردنية
+              </p>
+
             </div>
+
           </div>
 
           <div className="topbar-left">
+
             <button
               className="survey-btn"
-              onClick={() => window.open('https://forms.gle/W3xtwb49j7NsWHF59', '_blank')}
+              onClick={() =>
+                window.open(
+                  'https://forms.gle/W3xtwb49j7NsWHF59',
+                  '_blank'
+                )
+              }
               type="button"
             >
               <ClipboardCheck size={18} />
@@ -234,91 +320,190 @@ export default function App() {
 
             <button
               className="icon-btn"
-              onClick={() => setSidebarOpen((prev) => !prev)}
+              onClick={() =>
+                setSidebarOpen((prev) => !prev)
+              }
               type="button"
             >
               <PanelRight size={18} />
             </button>
+
           </div>
+
         </header>
 
         <main className="chat-main">
+
           {isOnlyWelcome ? (
+
             <section className="welcome-section">
+
               <div className="welcome-icon">
                 <Recycle size={40} />
               </div>
-              <h2>حرم جامعي مستدام، مستقبل أذكى 🌱</h2>
-              <p>اسألني عن إعادة التدوير داخل الجامعة وسأساعدك بمعلومات عملية.</p>
+
+              <h2>
+                حرم جامعي مستدام، مستقبل أذكى 🌱
+              </h2>
+
+              <p>
+                اسألني عن إعادة التدوير داخل الجامعة وسأساعدك بمعلومات عملية.
+              </p>
+
               <div className="quick-grid">
+
                 {quickQuestions.map((item, index) => {
+
                   const Icon = item.icon;
+
                   return (
                     <button
                       key={index}
                       className="quick-card"
-                      onClick={() => handleQuickQuestion(item.prompt)}
+                      onClick={() =>
+                        handleQuickQuestion(item.prompt)
+                      }
                       type="button"
                     >
+
                       <div className="quick-card-icon">
                         <Icon size={16} />
                       </div>
+
                       <span>{item.label}</span>
+
                     </button>
                   );
+
                 })}
+
               </div>
+
             </section>
+
           ) : (
+
             <section className="messages-section">
+
               {messages.map((msg) => (
-                <div key={msg.id} className={`message-row ${msg.role === 'user' ? 'user-row' : 'ai-row'}`}>
-                  <div className={`message-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`}>
+
+                <div
+                  key={msg.id}
+                  className={`message-row ${
+                    msg.role === 'user'
+                      ? 'user-row'
+                      : 'ai-row'
+                  }`}
+                >
+
+                  <div
+                    className={`message-bubble ${
+                      msg.role === 'user'
+                        ? 'user-bubble'
+                        : 'ai-bubble'
+                    }`}
+                  >
+
                     {msg.role === 'ai' ? (
+
                       <div className="markdown-content">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                        >
+                          {msg.text}
+                        </ReactMarkdown>
+
                       </div>
+
                     ) : (
+
                       msg.text
+
                     )}
+
                   </div>
+
                 </div>
+
               ))}
+
               {isLoading && (
+
                 <div className="message-row ai-row">
-                  <div className="message-bubble ai-bubble">جاري التفكير...</div>
+
+                  <div className="message-bubble ai-bubble">
+                    جاري البحث في المعلومات...
+                  </div>
+
                 </div>
+
               )}
+
               <div ref={messagesEndRef} />
+
             </section>
+
           )}
+
         </main>
 
         <footer className="chat-footer">
+
           <div className="input-shell">
+
             <input
               type="text"
               placeholder="اسأل EcoWasteAI..."
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              onChange={(e) =>
+                setInputValue(e.target.value)
+              }
+              onKeyDown={(e) =>
+                e.key === 'Enter' &&
+                handleSendMessage()
+              }
               disabled={isLoading}
               className="chat-input"
             />
-            <button onClick={handleSendMessage} disabled={isLoading} className="send-btn" type="button">
+
+            <button
+              onClick={handleSendMessage}
+              disabled={isLoading}
+              className="send-btn"
+              type="button"
+            >
               <Send size={18} />
             </button>
+
           </div>
+
           <div className="footer-email">
-            <Mail size={12} className="footer-email-icon" />
-            <span>للتواصل العلمي: yarahyari41@gmail.com</span>
+
+            <Mail
+              size={12}
+              className="footer-email-icon"
+            />
+
+            <span>
+              للتواصل العلمي: yarahyari41@gmail.com
+            </span>
+
           </div>
-          <button className="clear-chat-link" onClick={clearChat} type="button">
+
+          <button
+            className="clear-chat-link"
+            onClick={clearChat}
+            type="button"
+          >
             <Trash2 size={14} />
             <span>مسح المحادثة الحالية</span>
           </button>
+
         </footer>
+
       </div>
+
     </div>
   );
 }
