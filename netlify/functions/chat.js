@@ -7,6 +7,14 @@ const GEMINI_MODEL = "gemini-embedding-001";
 const GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"];
 const FETCH_COUNT = 30; // ask Supabase for more rows, because many documents are stored as duplicates
 const USE_COUNT = 6;    // number of DISTINCT documents sent to Groq
+
+// Minimum similarity (0 to 1) of the BEST match for the question to count as "found in the database".
+// 0 = disabled (Groq is always called). After testing, set it to about 0.6 or whatever fits your data.
+// The real similarity is returned as "topSimilarity" in the response (see browser console, F12).
+const MIN_SIMILARITY = 0;
+
+const NO_INFO_AR = "عذراً، لا تتوفر لدي معلومات عن هذا الموضوع في قاعدة المعرفة الحالية. جرّب إعادة صياغة سؤالك، أو اسأل عن إعادة التدوير وإدارة النفايات في الجامعات.";
+const NO_INFO_EN = "Sorry, I don't have information about this topic in my knowledge base. Try rephrasing, or ask about recycling and waste management at universities.";
 const MAX_CONTEXT_CHARS = 6000;
 const MAX_QUESTION_CHARS = 1000;
 
@@ -18,6 +26,11 @@ Rules:
 3. Always reply in the same language as the user's question. If the user writes in Arabic, reply in clear, natural Arabic. If they use Jordanian or colloquial Arabic, understand it fully and answer in simple, friendly Arabic (Modern Standard Arabic is fine, kept easy to read).
 4. Be concise and practical. Use short lists when giving steps.
 5. Never mention "context", "documents", or "database" in your answer. Just answer naturally.`;
+
+// Reads an environment variable and removes accidental spaces, line breaks and wrapping quotes.
+function env(name) {
+  return String(process.env[name] || "").trim().replace(/^["']|["']$/g, "").trim();
+}
 
 function json(statusCode, body) {
   return {
@@ -47,7 +60,7 @@ async function embedQuestion(question) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": process.env.GEMINI_API_KEY,
+        "x-goog-api-key": env("GEMINI_API_KEY"),
       },
       body: JSON.stringify({
         model: `models/${GEMINI_MODEL}`,
@@ -57,7 +70,12 @@ async function embedQuestion(question) {
     },
     8000
   );
-  if (!res.ok) throw new Error(`Gemini embedding failed (HTTP ${res.status})`);
+  if (!res.ok) {
+    const text = await res.text();
+    let reason = text.slice(0, 300);
+    try { reason = JSON.parse(text)?.error?.message || reason; } catch {}
+    throw new Error(`Gemini embedding failed (HTTP ${res.status}): ${reason}`);
+  }
   const data = await res.json();
   const values = data?.embedding?.values;
   if (!Array.isArray(values)) throw new Error("Gemini returned no embedding");
@@ -65,15 +83,15 @@ async function embedQuestion(question) {
 }
 
 async function searchDocuments(embedding) {
-  const base = process.env.SUPABASE_URL.replace(/\/+$/, "");
+  const base = env("SUPABASE_URL").replace(/\/+$/, "");
   const res = await timedFetch(
     `${base}/rest/v1/rpc/match_documents`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: process.env.SUPABASE_KEY,
-        Authorization: `Bearer ${process.env.SUPABASE_KEY}`,
+        apikey: env("SUPABASE_KEY"),
+        Authorization: `Bearer ${env("SUPABASE_KEY")}`,
       },
       body: JSON.stringify({
         query_embedding: embedding,
@@ -125,7 +143,7 @@ async function askGroq(question, context) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          Authorization: `Bearer ${env("GROQ_API_KEY")}`,
         },
         body: JSON.stringify({
           model,
@@ -169,7 +187,7 @@ export async function handler(event) {
 
   try {
     const missing = ["SUPABASE_URL", "SUPABASE_KEY", "GEMINI_API_KEY", "GROQ_API_KEY"].filter(
-      (name) => !process.env[name]
+      (name) => !env(name)
     );
     if (missing.length) {
       console.error("Missing environment variables:", missing.join(", "));
@@ -191,10 +209,18 @@ export async function handler(event) {
 
     const embedding = await embedQuestion(question);
     const rows = await searchDocuments(embedding);
+    const topSimilarity = rows.length ? Number(rows[0].similarity) : 0;
+
+    // Nothing relevant enough in the database -> answer directly, without calling Groq
+    if (MIN_SIMILARITY > 0 && topSimilarity < MIN_SIMILARITY) {
+      const isArabic = /[\u0600-\u06FF]/.test(question);
+      return json(200, { answer: isArabic ? NO_INFO_AR : NO_INFO_EN, topSimilarity });
+    }
+
     const context = buildContext(rows);
     const answer = await askGroq(question, context);
 
-    return json(200, { answer });
+    return json(200, { answer, topSimilarity });
   } catch (error) {
     console.error("chat function error:", error.message);
     return json(500, { error: "Something went wrong", details: error.message });

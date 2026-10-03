@@ -1,0 +1,240 @@
+/* src/components/JordanUniversityMap.css
+   All selectors are prefixed with .jum- so nothing else on the site is affected.
+   Uses the site's existing --navy / --lime variables (with fallbacks). */
+
+.jum-sec {
+  --jum-navy: var(--navy, #142245);
+  --jum-lime: var(--lime, #b9f76a);
+  --jum-green: #3aa655;
+  --jum-yellow: #f2b705;
+  --jum-grey: #9aa3a7;
+  position: relative; background: #fff; padding: 88px 28px 96px; border-top: 3px solid #d6f0cd;
+}
+.jum-sec::before {
+  content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 9px; border-radius: 999px; background: var(--jum-lime); box-shadow: 0 0 0 5px #fff;
+}
+.jum-wrap { max-width: 1240px; margin: 0 auto; }
+
+/* ---------- Header ---------- */
+.jum-head { text-align: center; max-width: 780px; margin: 0 auto 26px; }
+.jum-pill {
+  display: inline-block; padding: 9px 22px; border-radius: 999px; font-size: 14px; font-weight: 800;
+  background: linear-gradient(90deg, #b9f76a, #e4fbc2); color: var(--jum-navy);
+}
+.jum-head h2 { margin: 16px 0 10px; font-size: clamp(26px, 3.4vw, 42px); line-height: 1.3; font-weight: 800; color: var(--jum-navy); }
+.jum-head p { margin: 0; font-size: clamp(14.5px, 1.6vw, 17.5px); line-height: 1.9; color: #1f2937; }
+
+/* ---------- Search + filters ---------- */
+.jum-toolbar { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+.jum-search { position: relative; display: block; width: 100%; max-width: 520px; margin-inline: auto; }
+.jum-search > svg { position: absolute; top: 50%; inset-inline-start: 16px; transform: translateY(-50%); color: #5b6b64; pointer-events: none; }
+.jum-search input {
+  width: 100%; box-sizing: border-box; padding: 13px 46px; border-radius: 999px; border: 2px solid #cdebc9;
+  background: #f7fdf2; color: #12261c; font: inherit; font-size: 15.5px; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.jum-search input::-webkit-search-cancel-button { display: none; }
+.jum-search input:focus { border-color: var(--jum-navy); box-shadow: 0 0 0 4px rgba(185, 247, 106, .5); }
+.jum-search-clear {
+  position: absolute; top: 50%; inset-inline-end: 12px; transform: translateY(-50%); width: 26px; height: 26px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: #e5efe0; color: var(--jum-navy); cursor: pointer;
+}
+.jum-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.jum-chip {
+  padding: 8px 16px; border-radius: 999px; border: 1.5px solid #cdebc9; background: #f3fbea; color: #12261c;
+  font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s, transform .15s;
+}
+.jum-chip:hover { transform: translateY(-1px); border-color: var(--jum-navy); }
+.jum-chip.on { background: var(--jum-lime); border-color: var(--jum-navy); color: var(--jum-navy); }
+.jum-chip:focus-visible, .jum-dot:focus-visible, .jum-btn:focus-visible, .jum-list button:focus-visible, .jum-zoom button:focus-visible, .jum-x:focus-visible {
+  outline: 3px solid var(--jum-navy); outline-offset: 2px;
+}
+
+/* ---------- Layout ---------- */
+.jum-layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 22px; align-items: start; }
+
+/* ---------- Map card ---------- */
+.jum-map-card {
+  position: relative; overflow: hidden; border-radius: 30px; border: 2px solid #cdebc9; background-color: #f3fbea;
+  background-image: radial-gradient(#cfe8c4 1.4px, transparent 1.7px); background-size: 22px 22px;
+  box-shadow: 0 26px 50px -26px rgba(60, 140, 70, .5);
+}
+.jum-viewport {
+  --jum-h: clamp(480px, 78vh, 700px);
+  height: var(--jum-h); display: flex; overflow: auto; direction: ltr; padding: 18px;
+  box-sizing: border-box; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+}
+.jum-stage {
+  position: relative; flex: none; margin: auto;
+  width: calc(min(100%, (var(--jum-h) - 36px) * .8944) * var(--z, 1));
+}
+.jum-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 14px 18px rgba(44, 122, 52, .22)); }
+.jum-shape { fill: url(#jum-g); stroke: #2c7a34; stroke-width: 2.4; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+
+/* Zoom controls */
+.jum-zoom { position: absolute; top: 14px; inset-inline-start: 14px; z-index: 6; display: flex; flex-direction: column; gap: 6px; }
+.jum-zoom button {
+  width: 38px; height: 38px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--jum-navy); border-radius: 12px; background: #fff; color: var(--jum-navy); cursor: pointer;
+  box-shadow: 0 6px 14px -6px rgba(20, 34, 69, .45); transition: background .15s;
+}
+.jum-zoom button:hover:not(:disabled) { background: var(--jum-lime); }
+.jum-zoom button:disabled { opacity: .45; cursor: default; }
+
+/* Markers */
+.jum-dot {
+  position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; padding: 0; border: 0; background: none; cursor: pointer;
+  z-index: 1; transition: opacity .2s;
+}
+.jum-dot.documented { --c: var(--jum-green); }
+.jum-dot.limited { --c: var(--jum-yellow); }
+.jum-dot.nodata { --c: var(--jum-grey); }
+.jum-dot-core {
+  display: block; width: 100%; height: 100%; border-radius: 50%; box-sizing: border-box; background: var(--c);
+  border: 3px solid #fff; box-shadow: 0 3px 8px rgba(20, 34, 69, .38); transition: transform .15s, box-shadow .15s;
+}
+.jum-dot:hover, .jum-dot:focus-visible { z-index: 3; }
+.jum-dot:hover .jum-dot-core { transform: scale(1.2); }
+.jum-dot.sel { z-index: 4; }
+.jum-dot.sel .jum-dot-core { transform: scale(1.4); box-shadow: 0 0 0 3px var(--jum-navy), 0 6px 14px rgba(20, 34, 69, .4); }
+.jum-dot.dim { opacity: .16; pointer-events: none; }
+.jum-dot-label {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); direction: rtl; white-space: nowrap;
+  padding: 4px 10px; border-radius: 8px; background: var(--jum-navy); color: #fff; font-size: 12px; font-weight: 700;
+  opacity: 0; pointer-events: none; transition: opacity .12s;
+}
+.jum-dot:hover .jum-dot-label, .jum-dot:focus-visible .jum-dot-label, .jum-dot.sel .jum-dot-label { opacity: 1; }
+
+/* Legend on the map */
+.jum-legend-float {
+  position: absolute; bottom: 12px; inset-inline-start: 12px; z-index: 5; display: flex; flex-direction: column; gap: 5px;
+  padding: 9px 12px; border-radius: 14px; background: rgba(255, 255, 255, .94); border: 1px solid #d9eccf;
+  font-size: 12px; font-weight: 700; color: #12261c; box-shadow: 0 8px 18px -10px rgba(20, 34, 69, .4);
+}
+.jum-legend-float span { display: inline-flex; align-items: center; gap: 7px; }
+.jum-legend-float i, .jum-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(20, 34, 69, .25); flex: none; }
+.jum-empty-map {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; padding: 12px 20px; border-radius: 14px;
+  background: #fff; border: 1.5px solid #cdebc9; color: var(--jum-navy); font-weight: 800; font-size: 14.5px; text-align: center; max-width: 80%;
+}
+
+/* ---------- Popup (inside map card) ---------- */
+.jum-popup {
+  position: absolute; z-index: 8; top: 14px; inset-inline-end: 14px; width: min(370px, calc(100% - 82px)); max-height: calc(100% - 28px); overflow: auto;
+  box-sizing: border-box; padding: 20px 20px 18px; border-radius: 24px; background: #fff; border: 1.5px solid #cdebc9;
+  box-shadow: 0 26px 50px -18px rgba(20, 34, 69, .5); animation: jum-pop .18s ease;
+}
+@keyframes jum-pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+.jum-popup h3, .jum-modal h3 { margin: 0 34px 6px 0; font-size: 20px; line-height: 1.4; font-weight: 800; color: var(--jum-navy); }
+[dir='ltr'] .jum-popup h3, [dir='ltr'] .jum-modal h3 { margin: 0 0 6px 34px; }
+.jum-city { display: flex; align-items: center; gap: 5px; margin: 0 0 10px; font-size: 14px; font-weight: 700; color: #5b6b64; }
+.jum-x {
+  position: absolute; top: 14px; inset-inline-start: 14px; width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%; background: #eef6e9; color: var(--jum-navy); cursor: pointer;
+}
+.jum-x:hover { background: var(--jum-lime); }
+
+.jum-badge { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 800; color: #12261c; }
+.jum-badge i { width: 10px; height: 10px; border-radius: 50%; background: var(--b); }
+.jum-badge.documented { --b: var(--jum-green); background: #e3f5e7; }
+.jum-badge.limited { --b: var(--jum-yellow); background: #fdf3cd; }
+.jum-badge.nodata { --b: var(--jum-grey); background: #eceff0; }
+
+.jum-rows { margin-top: 14px; display: flex; flex-direction: column; }
+.jum-row { display: grid; grid-template-columns: 112px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid #edf4e8; font-size: 13.5px; line-height: 1.7; }
+.jum-row-label { font-weight: 800; color: var(--jum-navy); }
+.jum-row-value { color: #1f2937; word-break: break-word; }
+.jum-row-value a { color: #1b7fb0; font-weight: 700; }
+.jum-nodata { color: #8a948f; font-style: normal; }
+.jum-mats { display: flex; flex-wrap: wrap; gap: 5px; }
+.jum-mat { padding: 2px 10px; border-radius: 999px; background: #f0f9e8; border: 1px solid #d3ebc4; font-size: 12.5px; font-weight: 700; color: #12261c; }
+
+.jum-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.jum-btn {
+  flex: 1 1 140px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 14px; border-radius: 14px;
+  border: 1.5px solid var(--jum-navy); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform .15s, background .15s;
+}
+.jum-btn:hover { transform: translateY(-2px); }
+.jum-btn.primary { background: var(--jum-lime); color: var(--jum-navy); }
+.jum-btn.dark { background: var(--jum-navy); color: #fff; }
+.jum-btn.ghost { background: #fff; color: var(--jum-navy); }
+
+/* ---------- Sidebar ---------- */
+.jum-side { display: flex; flex-direction: column; gap: 16px; }
+.jum-box { padding: 18px; border-radius: 24px; background: #fff; border: 2px solid #e1eef5; }
+.jum-box h4 { margin: 0 0 12px; font-size: 16px; font-weight: 800; color: var(--jum-navy); }
+.jum-box h4 small { font-size: 12px; font-weight: 700; color: #6b7a73; }
+.jum-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.jum-stats > div { padding: 10px 4px; border-radius: 16px; background: #f3fbea; text-align: center; display: flex; flex-direction: column; gap: 2px; }
+.jum-stats strong { font-size: 26px; line-height: 1.1; font-weight: 800; color: var(--jum-navy); }
+.jum-stats span { font-size: 11.5px; font-weight: 700; color: #4b5563; line-height: 1.4; }
+.jum-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 700; color: #12261c; }
+.jum-legend li { display: flex; align-items: center; gap: 9px; }
+.jum-note { margin: 12px 0 0; font-size: 12.5px; line-height: 1.7; color: #5b6b64; }
+.jum-list { list-style: none; margin: 0; padding: 0; max-height: 330px; overflow: auto; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; }
+.jum-list button {
+  width: 100%; display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 9px; padding: 8px 10px; border: 0; border-radius: 12px;
+  background: transparent; text-align: start; font: inherit; color: #12261c; cursor: pointer; transition: background .12s;
+}
+.jum-list button:hover { background: #f3fbea; }
+.jum-list button.on { background: var(--jum-lime); }
+.jum-list i { width: 12px; height: 12px; border-radius: 50%; }
+.jum-li-name { font-size: 13.5px; font-weight: 700; line-height: 1.5; }
+.jum-li-city { font-size: 12px; color: #6b7a73; font-weight: 600; white-space: nowrap; }
+
+/* ---------- Details dialog ---------- */
+.jum-modal-bg {
+  position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 18px;
+  background: rgba(20, 34, 69, .55); backdrop-filter: blur(3px); animation: jum-fade .15s ease;
+}
+@keyframes jum-fade { from { opacity: 0; } to { opacity: 1; } }
+.jum-modal {
+  position: relative; width: min(640px, 100%); max-height: 90vh; overflow: auto; box-sizing: border-box; padding: 26px 26px 22px;
+  border-radius: 28px; background: #fff; box-shadow: 0 40px 80px -24px rgba(0, 0, 0, .6);
+}
+.jum-modal h3 { font-size: 24px; }
+.jum-desc { margin: 14px 0 0; font-size: 15px; line-height: 1.9; color: #1f2937; }
+.jum-modal .jum-row { font-size: 14.5px; grid-template-columns: 150px 1fr; }
+
+/* ---------- Tablet ---------- */
+@media (max-width: 1100px) {
+  .jum-layout { grid-template-columns: minmax(0, 1fr) 290px; gap: 18px; }
+  .jum-popup { width: min(340px, calc(100% - 82px)); }
+}
+
+/* ---------- Mobile / small tablet ---------- */
+@media (max-width: 960px) {
+  .jum-sec { padding: 60px 14px 64px; }
+  .jum-layout { grid-template-columns: 1fr; gap: 16px; }
+  .jum-viewport { --jum-h: clamp(400px, 66vh, 560px); padding: 12px; }
+  .jum-map-card { border-radius: 24px; }
+  .jum-filters { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 6px; margin-inline: -14px; padding-inline: 14px; scrollbar-width: none; }
+  .jum-filters::-webkit-scrollbar { display: none; }
+  .jum-chip { padding: 7px 14px; font-size: 13px; }
+  .jum-dot { width: 26px; height: 26px; margin: -13px 0 0 -13px; }
+  .jum-zoom button { width: 36px; height: 36px; }
+
+  /* Popup becomes a bottom sheet inside the map card */
+  .jum-popup {
+    top: auto; bottom: 10px; inset-inline: 10px; width: auto; max-height: 68%; padding: 16px 16px 14px; border-radius: 20px;
+  }
+  .jum-popup h3 { font-size: 17.5px; }
+  .jum-row { grid-template-columns: 96px 1fr; font-size: 13px; padding: 7px 0; }
+  .jum-legend-float { bottom: 8px; inset-inline-start: 8px; padding: 6px 9px; gap: 3px; font-size: 10.5px; }
+  .jum-legend-float i { width: 10px; height: 10px; }
+  .jum-list { max-height: 280px; }
+}
+
+@media (max-width: 480px) {
+  .jum-head h2 { font-size: 24px; }
+  .jum-viewport { --jum-h: clamp(380px, 62vh, 480px); }
+  .jum-stats strong { font-size: 22px; }
+  .jum-modal { padding: 22px 18px 18px; border-radius: 22px; }
+  .jum-modal h3 { font-size: 20px; }
+  .jum-modal .jum-row { grid-template-columns: 104px 1fr; font-size: 13.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jum-popup, .jum-modal-bg { animation: none; }
+  .jum-dot-core, .jum-chip, .jum-btn { transition: none; }
+}
