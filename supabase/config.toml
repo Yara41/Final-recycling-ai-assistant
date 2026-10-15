@@ -1,6 +1,14 @@
-# Minimal Supabase CLI config for this repo's Edge Functions.
-# Linking:  supabase link --project-ref <your-project-ref>
-project_id = "recycling-ai-assistant"
+# Supabase CLI config for this repo's Edge Functions.
+#
+# Target project (the only one this repo may deploy to):
+#   EcoWasteAI  ref = uwxksbwlzjrjlccbdjtk  region = ap-south-1
+#   https://uwxksbwlzjrjlccbdjtk.supabase.co
+# It already holds the `documents` table and `match_documents`; this repo never
+# writes to them and contains no migrations.
+#
+# Deploy with the pinned npm script (passes --project-ref explicitly):
+#   npm run supabase:deploy
+project_id = "uwxksbwlzjrjlccbdjtk"
 
 # Keep JWT verification ON: the gateway rejects requests without a valid project JWT.
 [functions.chat]

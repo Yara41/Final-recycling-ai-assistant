@@ -4,6 +4,8 @@ React/Vite website (Arabic RTL + English) hosted on Netlify as a static site.
 AI chat (RAG) and photo classification run in Supabase Edge Functions with Google Gemini:
 see [docs/SUPABASE_MIGRATION.md](docs/SUPABASE_MIGRATION.md) for secrets, deployment and tests.
 
+Supabase project: **`uwxksbwlzjrjlccbdjtk`** (`https://uwxksbwlzjrjlccbdjtk.supabase.co`, ap-south-1). The build refuses any other project.
+
 Local development: copy `.env.example` to `.env.local`, fill in the two public values, then `npm install && npm run dev`.
 
 ---

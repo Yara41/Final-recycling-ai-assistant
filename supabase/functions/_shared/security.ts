@@ -14,7 +14,7 @@
 
 // Default origins that may call the functions. Extra origins (for example a custom
 // domain) can be added without code changes through the ALLOWED_ORIGINS secret:
-//   supabase secrets set ALLOWED_ORIGINS="https://example.com,https://www.example.com"
+//   supabase secrets set --project-ref uwxksbwlzjrjlccbdjtk ALLOWED_ORIGINS="https://example.com,https://www.example.com"
 const DEFAULT_ORIGIN_PATTERNS: RegExp[] = [
   // Production site and every Netlify deploy preview / branch deploy of it
   /^https:\/\/([a-z0-9-]+--)?recycling-ai-assistant2026\.netlify\.app$/,
@@ -23,6 +23,16 @@ const DEFAULT_ORIGIN_PATTERNS: RegExp[] = [
 ];
 
 const ALLOWED_HEADERS = "authorization, x-client-info, apikey, content-type";
+
+// The ONLY Supabase project these functions may run against (EcoWasteAI, ap-south-1).
+// Keep in sync with vite.config.js and supabase/config.toml (checked by a Deno test).
+export const EXPECTED_PROJECT_REF = "uwxksbwlzjrjlccbdjtk";
+
+// True when SUPABASE_URL (injected by Supabase) belongs to the expected project.
+export function isExpectedProject(supabaseUrl: string): boolean {
+  const match = /^https:\/\/([a-z0-9]{20})\.supabase\.co\/?$/.exec(supabaseUrl.trim());
+  return match?.[1] === EXPECTED_PROJECT_REF;
+}
 
 // Reads a secret / environment variable and removes accidental spaces and quotes.
 export function env(name: string): string {

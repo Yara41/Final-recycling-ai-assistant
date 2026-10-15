@@ -2,11 +2,13 @@
 // External services (Gemini, Supabase REST) are replaced with a fake fetch,
 // so these tests check request/response handling, not live AI output.
 //
-// Run:  deno test --allow-env supabase/functions/tests/
+// Run:  npm run test:functions   (deno test --no-lock --no-config --allow-env --allow-read supabase/functions/tests/)
 import assert from "node:assert/strict";
 import { handleChat, buildContext } from "../chat/handler.ts";
 import { handleClassify, normalize } from "../classify/handler.ts";
-import { resetRateLimits } from "../_shared/security.ts";
+import { EXPECTED_PROJECT_REF, isExpectedProject, resetRateLimits } from "../_shared/security.ts";
+
+const PROJECT_URL = "https://uwxksbwlzjrjlccbdjtk.supabase.co";
 
 const SITE = "https://recycling-ai-assistant2026.netlify.app";
 const PREVIEW = "https://deploy-preview-12--recycling-ai-assistant2026.netlify.app";
@@ -17,7 +19,7 @@ let calls: Call[] = [];
 
 function setEnv() {
   Deno.env.set("GEMINI_API_KEY", "test-gemini-key");
-  Deno.env.set("SUPABASE_URL", "https://example.supabase.co");
+  Deno.env.set("SUPABASE_URL", PROJECT_URL);
   Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-service-role");
   Deno.env.delete("ALLOWED_ORIGINS");
   Deno.env.delete("GEMINI_CHAT_MODEL");
@@ -149,7 +151,7 @@ Deno.test("chat: full RAG flow, duplicates removed, keys sent as headers", async
   assert.equal((embed.init.headers as Record<string, string>)["x-goog-api-key"], "test-gemini-key");
   assert.equal(embed.body.outputDimensionality, 3072);
 
-  assert.equal(rpc.url, "https://example.supabase.co/rest/v1/rpc/match_documents");
+  assert.equal(rpc.url, `${PROJECT_URL}/rest/v1/rpc/match_documents`);
   assert.equal(rpc.init.method, "POST");
   assert.equal(rpc.body.match_count, 30);
   assert.equal(rpc.body.query_embedding.length, 3072);
@@ -316,4 +318,59 @@ Deno.test("classify: normalize() repairs unexpected model output", () => {
   assert.equal(n.confidence, 0.85);
   assert.equal(n.item, "عنصر غير محدد");
   assert.equal(n.tip, "5");
+});
+
+// ---------------------------------------------------------------- project ref
+Deno.test("chat refuses to run against any Supabase project other than uwxksbwlzjrjlccbdjtk", async () => {
+  setup();
+  Deno.env.set("SUPABASE_URL", "https://abcdefghijklmnopqrst.supabase.co");
+  mockFetch(() => { throw new Error("must not call Gemini or the database"); });
+  const res = await handleChat(post("chat", { question: "سؤال" }));
+  assert.equal(res.status, 500);
+  assert.equal((await res.json()).code, "wrong_project");
+  assert.equal(calls.length, 0);
+  teardown();
+});
+
+Deno.test("isExpectedProject only accepts the EcoWasteAI project URL", () => {
+  assert.equal(isExpectedProject(PROJECT_URL), true);
+  assert.equal(isExpectedProject(PROJECT_URL + "/"), true);
+  assert.equal(isExpectedProject("https://abcdefghijklmnopqrst.supabase.co"), false);
+  assert.equal(isExpectedProject("https://uwxksbwlzjrjlccbdjtk.supabase.co.evil.com"), false);
+  assert.equal(isExpectedProject(""), false);
+});
+
+Deno.test("project ref is the same in vite.config.js, supabase/config.toml, package.json and the functions", async () => {
+  const root = new URL("../../../", import.meta.url);
+  const read = (p: string) => Deno.readTextFile(new URL(p, root));
+  assert.equal(EXPECTED_PROJECT_REF, "uwxksbwlzjrjlccbdjtk");
+  assert.match(await read("vite.config.js"), /EXPECTED_SUPABASE_REF = 'uwxksbwlzjrjlccbdjtk'/);
+  assert.match(await read("supabase/config.toml"), /^project_id = "uwxksbwlzjrjlccbdjtk"$/m);
+  const deploy = JSON.parse(await read("package.json")).scripts["supabase:deploy"] as string;
+  assert.equal(deploy.match(/--project-ref uwxksbwlzjrjlccbdjtk/g)?.length, 2);
+});
+
+Deno.test("no code in this repo writes to the database", async () => {
+  // The only database call allowed is the read-only RPC match_documents.
+  const root = new URL("../../../", import.meta.url);
+  const files = [
+    "supabase/functions/chat/handler.ts",
+    "supabase/functions/classify/handler.ts",
+    "supabase/functions/_shared/security.ts",
+    "src/lib/api.js",
+    "src/App.jsx",
+  ];
+  for (const f of files) {
+    const code = await Deno.readTextFile(new URL(f, root));
+    const restCalls = code.match(/\/rest\/v1\/[A-Za-z_/]+/g) ?? [];
+    for (const call of restCalls) assert.equal(call, "/rest/v1/rpc/match_documents", `${f}: ${call}`);
+    // no supabase-js table access (.from("x").insert/update/delete/upsert)
+    assert.doesNotMatch(code, /\.from\(\s*["'`]/, f);
+    // no write HTTP methods
+    assert.doesNotMatch(code, /method:\s*["'](PUT|PATCH|DELETE)["']/i, f);
+    assert.doesNotMatch(code, /\b(INSERT INTO|DELETE FROM|UPDATE\s+public|DROP TABLE|TRUNCATE)\b/, f);
+  }
+  let migrations = false;
+  try { await Deno.stat(new URL("supabase/migrations", root)); migrations = true; } catch { /* none */ }
+  assert.equal(migrations, false, "this branch must not contain database migrations");
 });

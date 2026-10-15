@@ -7,6 +7,7 @@
 import {
   env,
   guard,
+  isExpectedProject,
   HttpError,
   json,
   timedFetch,
@@ -185,6 +186,11 @@ export async function handleChat(req: Request): Promise<Response> {
     if (missing.length) {
       console.error("Missing secrets:", missing.join(", "));
       throw new HttpError(500, "server_config", "Server configuration error.");
+    }
+    // Refuse to search a database other than the EcoWasteAI project.
+    if (!isExpectedProject(env("SUPABASE_URL"))) {
+      console.error("Wrong Supabase project for this function:", env("SUPABASE_URL"));
+      throw new HttpError(500, "wrong_project", "Server configuration error.");
     }
 
     const question = String(body.question ?? "").replace(OLD_EN_SUFFIX, "").trim().slice(0, MAX_QUESTION_CHARS);

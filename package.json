@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "supabase:deploy": "supabase functions deploy chat --project-ref uwxksbwlzjrjlccbdjtk && supabase functions deploy classify --project-ref uwxksbwlzjrjlccbdjtk",
+    "test:functions": "deno test --no-lock --no-config --allow-env --allow-read supabase/functions/tests/"
   },
   "dependencies": {
     "lucide-react": "^0.577.0",

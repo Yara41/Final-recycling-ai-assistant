@@ -9,7 +9,32 @@ two Supabase Edge Functions that call Google Gemini:
 | `classify` | `supabase/functions/classify/handler.ts` | Gemini vision → `{ is_waste, item, category, recyclable, tip, confidence }` |
 
 Shared safeguards are in `supabase/functions/_shared/security.ts`.
-The `documents` table and `match_documents` are only read; nothing writes to the database.
+
+## 0. Target Supabase project (do not change)
+
+| | |
+|---|---|
+| Project ref | `uwxksbwlzjrjlccbdjtk` |
+| URL | `https://uwxksbwlzjrjlccbdjtk.supabase.co` |
+| Region | ap-south-1 (Mumbai) |
+| Dashboard name | "yarahyari41@gmail.com's Project" (renaming it to "EcoWasteAI" in Project Settings → General is safe; the ref and URL do not change) |
+| Contents used | table `documents` (817 rows, 3072-dim embeddings), SQL function `match_documents`, Edge Functions `chat` and `classify` |
+
+The ref is pinned in four places, and a Deno test fails if they ever differ:
+
+- `vite.config.js` → `EXPECTED_SUPABASE_REF`: the build and the dev server stop if `VITE_SUPABASE_URL`
+  or the `ref` inside `VITE_SUPABASE_ANON_KEY` belongs to another project.
+- `supabase/functions/_shared/security.ts` → `EXPECTED_PROJECT_REF`: `chat` refuses to search
+  (HTTP 500, code `wrong_project`) if it is deployed to any other project.
+- `supabase/config.toml` → `project_id`.
+- `package.json` → `npm run supabase:deploy` passes `--project-ref uwxksbwlzjrjlccbdjtk` explicitly.
+
+### Database safety
+
+- `match_documents` is a plain `SELECT ... ORDER BY embedding <=> query_embedding LIMIT n`; it reads only.
+- This branch contains **no migrations and no SQL**. The only database call is `POST /rest/v1/rpc/match_documents`.
+- A Deno test ("no code in this repo writes to the database") fails if a write method, a table write,
+  another REST endpoint or a `supabase/migrations` folder is added.
 
 ## 1. Secrets (Supabase → Edge Functions → Secrets)
 
@@ -22,14 +47,14 @@ The `documents` table and `match_documents` are only read; nothing writes to the
 | `GEMINI_VISION_MODEL` | optional | Default `gemini-flash-latest` (fallback `gemini-2.5-flash`). |
 | `MIN_SIMILARITY` | optional | 0 = off. If set (e.g. `0.6`), questions below it get the fixed "no information" reply without calling Gemini. |
 
-CLI equivalent: `supabase secrets set ALLOWED_ORIGINS="https://..."` (never commit secrets).
+CLI equivalent: `supabase secrets set --project-ref uwxksbwlzjrjlccbdjtk ALLOWED_ORIGINS="https://..."` (never commit secrets).
 
 ## 2. Netlify environment variables (public values only)
 
 Site configuration → Environment variables, scope **Builds**, all deploy contexts:
 
-- `VITE_SUPABASE_URL` = `https://<project-ref>.supabase.co`
-- `VITE_SUPABASE_ANON_KEY` = the **legacy anon** key (Supabase → Project Settings → API Keys → Legacy API keys → `anon`, `public`)
+- `VITE_SUPABASE_URL` = `https://uwxksbwlzjrjlccbdjtk.supabase.co`
+- `VITE_SUPABASE_ANON_KEY` = the **legacy anon** key of the same project (Supabase → Project Settings → API Keys → Legacy API keys → `anon`, `public`)
 
 Do not mark them as "contains secret values": they are public by design and are in the built JS.
 `netlify.toml` tells secret scanning to skip them.
@@ -58,12 +83,12 @@ per-user limits. Both need a new table, so they are not part of this change.
 
 ## 4. Deploying the functions
 
-They are deployed already (version 2 of each). To redeploy from this repo:
+Version 2 of each function is deployed. The project-ref check in `chat` (the `wrong_project` guard)
+was added after that deploy, so it becomes active with the next deploy. Deploy only after review:
 
 ```bash
-supabase link --project-ref <project-ref>
-supabase functions deploy chat
-supabase functions deploy classify
+supabase login
+npm run supabase:deploy      # deploys chat and classify to uwxksbwlzjrjlccbdjtk only
 ```
 
 `supabase/config.toml` keeps `verify_jwt = true` for both.
@@ -73,13 +98,13 @@ supabase functions deploy classify
 Offline unit tests (mocked Gemini and Supabase, no keys needed):
 
 ```bash
-deno test --no-lock --no-config --allow-env supabase/functions/tests/
+npm run test:functions
 ```
 
 Live tests (Git Bash / macOS / Linux). `ANON` is the public anon key from the dashboard:
 
 ```bash
-SB="https://<project-ref>.supabase.co"
+SB="https://uwxksbwlzjrjlccbdjtk.supabase.co"
 ANON="<legacy anon key>"
 SITE="https://recycling-ai-assistant2026.netlify.app"
 
