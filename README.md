@@ -1,3 +1,13 @@
+# EcoWasteAI
+
+React/Vite website (Arabic RTL + English) hosted on Netlify as a static site.
+AI chat (RAG) and photo classification run in Supabase Edge Functions with Google Gemini:
+see [docs/SUPABASE_MIGRATION.md](docs/SUPABASE_MIGRATION.md) for secrets, deployment and tests.
+
+Local development: copy `.env.example` to `.env.local`, fill in the two public values, then `npm install && npm run dev`.
+
+---
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
