@@ -1,10 +1,10 @@
+# Netlify hosts the static React/Vite site only.
+# All AI processing runs in Supabase Edge Functions (supabase/functions/chat, classify).
 [build]
   command = "npm run build"
   publish = "dist"
-  functions = "netlify/functions"
 
-[functions]
-  node_bundler = "esbuild"
-
-[functions."chat"]
-  timeout = 26
+# The VITE_SUPABASE_* values are public by design and appear in the built JS,
+# so Netlify secret scanning should not treat them as leaked secrets.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY"

@@ -25,3 +25,10 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Local env files and Supabase CLI state
+.env
+.env.*
+!.env.example
+supabase/.temp
+supabase/.branches

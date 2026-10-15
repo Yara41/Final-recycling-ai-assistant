@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { callFunction } from './lib/api';
 import {
   ArrowUp,
   Camera,
@@ -91,6 +92,7 @@ const EN = {
   "جاري تحليل الصورة...": "Analyzing the image...",
   "لم تصل إجابة من الخادم.": "No answer came back from the server.",
   "الخادم غير متاح حالياً، حاول لاحقاً.": "The server is unavailable right now, please try again later.",
+  "وصلت طلبات كثيرة خلال وقت قصير. انتظر دقيقة ثم حاول مرة أخرى.": "Too many requests in a short time. Please wait a minute and try again.",
   "لم أتعرّف على نفاية في الصورة. جرّب صورة أوضح وأقرب للعنصر.": "I couldn't recognize any waste in the photo. Try a clearer, closer picture.",
   "تعذّر تحليل الصورة حالياً، حاول مرة أخرى.": "Couldn't analyze the image right now, please try again.",
   "مرحباً بك في EcoWasteAI 🌱\n\nأنا مساعدك الذكي للتعرّف على ممارسات إعادة التدوير والاستدامة. اسألني عن فرز النفايات أو الاستدامة داخل الجامعة.": "Welcome to EcoWasteAI 🌱\n\nI'm your smart assistant for recycling and sustainability practices. Ask me about waste sorting or sustainability on campus.",
@@ -507,7 +509,7 @@ const loadConversations = () => {
   return [createConversation()];
 };
 
-// تصغير الصورة قبل الإرسال (صور الجوال كبيرة وحد Netlify حوالي 6MB)
+// تصغير الصورة قبل الإرسال (صور الجوال كبيرة، والدالة تقبل صوراً حتى 4MB تقريباً)
 const resizeImage = (file, maxSize = 1024) =>
   new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -635,19 +637,15 @@ export default function App() {
 
     let replyText;
     try {
-      const response = await fetch('/.netlify/functions/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: LANG === 'en' ? `${messageText}\n\n(Please answer in English.)` : messageText }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.details || data.error || 'Error');
+      // Supabase Edge Function "chat" (see supabase/functions/chat)
+      const data = await callFunction('chat', { question: messageText, lang: LANG });
 
       const answer = data.answer || data.reply || data.output || data.text;
       replyText = answer || 'لم تصل إجابة من الخادم.';
     } catch (error) {
-      replyText = 'الخادم غير متاح حالياً، حاول لاحقاً.';
+      replyText = error.status === 429
+        ? 'وصلت طلبات كثيرة خلال وقت قصير. انتظر دقيقة ثم حاول مرة أخرى.'
+        : 'الخادم غير متاح حالياً، حاول لاحقاً.';
     }
 
     updateChat(chatId, (c) => ({
@@ -695,18 +693,17 @@ export default function App() {
 
     let reply;
     try {
-      const response = await fetch('/.netlify/functions/classify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image, mimeType: 'image/jpeg' }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error');
+      // Supabase Edge Function "classify" (see supabase/functions/classify)
+      const data = await callFunction('classify', { image, mimeType: 'image/jpeg', lang: LANG });
       reply = data.is_waste === false
         ? { text: 'لم أتعرّف على نفاية في الصورة. جرّب صورة أوضح وأقرب للعنصر.' }
         : { text: '', classification: data };
     } catch (error) {
-      reply = { text: 'تعذّر تحليل الصورة حالياً، حاول مرة أخرى.' };
+      reply = {
+        text: error.status === 429
+          ? 'وصلت طلبات كثيرة خلال وقت قصير. انتظر دقيقة ثم حاول مرة أخرى.'
+          : 'تعذّر تحليل الصورة حالياً، حاول مرة أخرى.',
+      };
     }
 
     updateChat(chatId, (c) => ({

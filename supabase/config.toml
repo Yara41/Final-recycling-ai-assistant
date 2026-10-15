@@ -1,0 +1,10 @@
+# Minimal Supabase CLI config for this repo's Edge Functions.
+# Linking:  supabase link --project-ref <your-project-ref>
+project_id = "recycling-ai-assistant"
+
+# Keep JWT verification ON: the gateway rejects requests without a valid project JWT.
+[functions.chat]
+verify_jwt = true
+
+[functions.classify]
+verify_jwt = true
