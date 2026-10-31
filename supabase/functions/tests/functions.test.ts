@@ -347,7 +347,8 @@ Deno.test("project ref is the same in vite.config.js, supabase/config.toml, pack
   assert.match(await read("vite.config.js"), /EXPECTED_SUPABASE_REF = 'uwxksbwlzjrjlccbdjtk'/);
   assert.match(await read("supabase/config.toml"), /^project_id = "uwxksbwlzjrjlccbdjtk"$/m);
   const deploy = JSON.parse(await read("package.json")).scripts["supabase:deploy"] as string;
-  assert.equal(deploy.match(/--project-ref uwxksbwlzjrjlccbdjtk/g)?.length, 2);
+  assert.equal(deploy.match(/--project-ref uwxksbwlzjrjlccbdjtk/g)?.length, 4);
+  for (const fn of ["chat", "classify", "agent", "insights"]) assert.match(deploy, new RegExp(`functions deploy ${fn} `));
 });
 
 Deno.test("browser code never contains a privileged Supabase key reference", async () => {
