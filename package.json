@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "supabase:deploy": "supabase functions deploy chat --project-ref uwxksbwlzjrjlccbdjtk && supabase functions deploy classify --project-ref uwxksbwlzjrjlccbdjtk && supabase functions deploy agent --project-ref uwxksbwlzjrjlccbdjtk && supabase functions deploy insights --project-ref uwxksbwlzjrjlccbdjtk",
     "test:web": "node --test src/lib/__tests__/*.test.js",
+    "test:e2e": "node --test tests/e2e/*.e2e.mjs",
     "test:sql": "node --test tests/sql/*.test.mjs",
     "test:functions": "npx deno test --no-lock --no-config --allow-env --allow-read supabase/functions/tests/"
   },
