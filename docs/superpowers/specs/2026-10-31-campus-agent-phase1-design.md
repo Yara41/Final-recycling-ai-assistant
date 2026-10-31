@@ -53,9 +53,11 @@ pg_cron (weekly) ──► Edge Function `insights` ──► insights table (pr
 
 Key rules:
 
-- Tools run **as the calling user** (their JWT is forwarded to PostgREST), so Row Level
-  Security decides what each tool can see or change. The service role key is used only for the
-  knowledge-base search (unchanged) and the weekly insights job.
+- Tool **reads** run **as the calling user** (their JWT is forwarded to PostgREST), so Row Level
+  Security decides what each tool can see. Tool **writes** (recycling events, bin reports, resolving
+  reports, saving the turn, insights) go through `SECURITY DEFINER` SQL functions that only the
+  service role may execute; the Edge Function passes the user id it verified from the JWT. This
+  stops users forging points by calling the database directly with their own token.
 - The tool list sent to Gemini depends on the user's role; the server re-checks the role before
   executing any tool, so a manipulated prompt cannot call a tool the role does not have.
 - Maximum 4 model steps per user message, temperature 0.2. `gemini-2.5-flash` for the agent

@@ -350,27 +350,22 @@ Deno.test("project ref is the same in vite.config.js, supabase/config.toml, pack
   assert.equal(deploy.match(/--project-ref uwxksbwlzjrjlccbdjtk/g)?.length, 2);
 });
 
-Deno.test("no code in this repo writes to the database", async () => {
-  // The only database call allowed is the read-only RPC match_documents.
+Deno.test("browser code never contains a privileged Supabase key reference", async () => {
+  // Database writes now happen only inside Edge Functions (service role) and through
+  // SECURITY DEFINER SQL functions. The website must only ever use the public anon key.
   const root = new URL("../../../", import.meta.url);
-  const files = [
-    "supabase/functions/chat/handler.ts",
-    "supabase/functions/classify/handler.ts",
-    "supabase/functions/_shared/security.ts",
-    "src/lib/api.js",
-    "src/App.jsx",
-  ];
-  for (const f of files) {
-    const code = await Deno.readTextFile(new URL(f, root));
-    const restCalls = code.match(/\/rest\/v1\/[A-Za-z_/]+/g) ?? [];
-    for (const call of restCalls) assert.equal(call, "/rest/v1/rpc/match_documents", `${f}: ${call}`);
-    // no supabase-js table access (.from("x").insert/update/delete/upsert)
-    assert.doesNotMatch(code, /\.from\(\s*["'`]/, f);
-    // no write HTTP methods
-    assert.doesNotMatch(code, /method:\s*["'](PUT|PATCH|DELETE)["']/i, f);
-    assert.doesNotMatch(code, /\b(INSERT INTO|DELETE FROM|UPDATE\s+public|DROP TABLE|TRUNCATE)\b/, f);
+  const walk = async (dir: URL): Promise<string[]> => {
+    const out: string[] = [];
+    for await (const e of Deno.readDir(dir)) {
+      const u = new URL(e.name + (e.isDirectory ? "/" : ""), dir);
+      if (e.isDirectory) out.push(...await walk(u));
+      else if (/\.(jsx?|tsx?)$/.test(e.name)) out.push(u.pathname);
+    }
+    return out;
+  };
+  for (const f of await walk(new URL("src/", root))) {
+    // comments may warn about these keys; only code counts
+    const code = (await Deno.readTextFile(f)).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    assert.doesNotMatch(code, /service_role|sb_secret_|SERVICE_ROLE_KEY/, f);
   }
-  let migrations = false;
-  try { await Deno.stat(new URL("supabase/migrations", root)); migrations = true; } catch { /* none */ }
-  assert.equal(migrations, false, "this branch must not contain database migrations");
 });
