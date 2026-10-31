@@ -13,10 +13,9 @@ import {
   timedFetch,
   upstreamReason,
 } from "../_shared/security.ts";
+import { embed } from "../_shared/gemini.ts";
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const EMBED_MODEL = "gemini-embedding-001";
-const EMBED_DIM = 3072; // must match the stored embeddings
 
 const FETCH_COUNT = 30; // many rows in `documents` are duplicates, so fetch more
 const USE_COUNT = 6; // distinct passages sent to the model
@@ -53,32 +52,8 @@ function geminiKey(): string {
   return env("GEMINI_API_KEY");
 }
 
-export async function embedQuestion(question: string): Promise<number[]> {
-  const res = await timedFetch(
-    `${GEMINI_BASE}/${EMBED_MODEL}:embedContent`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey() },
-      body: JSON.stringify({
-        model: `models/${EMBED_MODEL}`,
-        content: { parts: [{ text: question }] },
-        outputDimensionality: EMBED_DIM,
-      }),
-    },
-    10_000,
-  );
-  if (!res.ok) {
-    console.error(`Gemini embedding failed (HTTP ${res.status}):`, await upstreamReason(res));
-    throw new HttpError(res.status === 429 ? 503 : 502, "embedding_failed", "Could not process the question.");
-  }
-  const data = await res.json();
-  const values = data?.embedding?.values;
-  if (!Array.isArray(values) || values.length !== EMBED_DIM) {
-    console.error("Unexpected embedding size:", Array.isArray(values) ? values.length : typeof values);
-    throw new HttpError(502, "embedding_failed", "Could not process the question.");
-  }
-  return values;
-}
+// Kept as a named export for existing callers; the implementation is shared.
+export const embedQuestion = embed;
 
 export async function searchDocuments(embedding: number[]): Promise<Row[]> {
   const base = env("SUPABASE_URL").replace(/\/+$/, "");
