@@ -80,3 +80,8 @@ export function serviceRpc<T>(fn: string, args: Record<string, unknown>): Promis
     headers: { apikey: key },
   });
 }
+
+export function serviceGet<T>(path: string): Promise<T> {
+  const key = env("SUPABASE_SERVICE_ROLE_KEY");
+  return rest<T>(path, key, { headers: { apikey: key } });
+}
