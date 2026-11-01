@@ -6,6 +6,9 @@ import { runTool as realRunTool, toolsForRole } from "./tools/index.ts";
 import type { ActionCard, ToolContext, ToolResult } from "./types.ts";
 
 export const MAX_STEPS = 4;
+// Hard cap on tools run per user message, so one prompt cannot log dozens of items
+// (protects points and the recorded behaviour data).
+export const MAX_TOOL_CALLS = 6;
 
 export type ActionRecord = { tool: string; input: Record<string, unknown>; result: unknown; ok: boolean; card?: ActionCard };
 
@@ -58,6 +61,10 @@ export async function runAgent(
     for (const part of calls) {
       const name = part.functionCall!.name;
       const args = part.functionCall!.args ?? {};
+      if (records.length >= MAX_TOOL_CALLS) {
+        responses.push({ functionResponse: { name, response: { ok: false, error: "too_many_actions" } } });
+        continue;
+      }
       const result = await deps.runTool(name, args, ctx);
       records.push({ tool: name, input: args, result: result.data ?? { error: result.error }, ok: result.ok, card: result.card });
       responses.push({

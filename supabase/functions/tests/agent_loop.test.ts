@@ -1,6 +1,6 @@
 // Agent loop tests with a scripted fake model and fake tools.
 import assert from "node:assert/strict";
-import { MAX_STEPS, runAgent } from "../agent/loop.ts";
+import { MAX_STEPS, MAX_TOOL_CALLS, runAgent } from "../agent/loop.ts";
 import { buildSystemPrompt } from "../agent/prompt.ts";
 import type { GeminiContent, GeminiPart, GenerateRequest } from "../_shared/gemini.ts";
 import { HttpError } from "../_shared/security.ts";
@@ -64,6 +64,7 @@ Deno.test("two-step: classify then log returns two cards and the final text", as
 
 Deno.test("stops after MAX_STEPS model calls", async () => {
   assert.equal(MAX_STEPS, 4);
+  assert.equal(MAX_TOOL_CALLS, 6);
   const { generate, requests } = script([
     [call("get_my_impact")], [call("get_my_impact")], [call("get_my_impact")], [call("get_my_impact")], [text("never")],
   ]);
@@ -122,4 +123,16 @@ Deno.test("history comes before the new message, and an attached photo is announ
   assert.match(contents[2].parts[0].text ?? "", /photo/i);
   assert.match(contents[2].parts[0].text ?? "", /now/);
   assert.ok((requests[0].tools ?? []).length > 0);
+});
+
+Deno.test("at most MAX_TOOL_CALLS tools run per message; extra calls are refused", async () => {
+  const many = Array.from({ length: 10 }, () => call("log_recycling", { item: "Can" }));
+  const { generate, requests } = script([many, [text("done")]]);
+  const { runTool, ran } = fakeTools({ log_recycling: { ok: true, card: { kind: "logged", title: "Logged", points: 10 } } });
+  const out = await runAgent({ ctx: ctx({ lang: "en" }), history: [], message: "I recycled 10 cans one by one", hasImage: false }, { generate, runTool });
+  assert.equal(ran.length, 6);
+  assert.equal(out.actions.length, 6);
+  const responses = requests[1].contents.at(-1)!.parts;
+  assert.equal(responses.length, 10);
+  assert.equal(responses[9].functionResponse?.response.error, "too_many_actions");
 });
