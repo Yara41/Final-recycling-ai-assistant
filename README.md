@@ -1,12 +1,31 @@
-# EcoWasteAI
+# EcoWasteAI — campus sustainability agent
 
-React/Vite website (Arabic RTL + English) hosted on Netlify as a static site.
-AI chat (RAG) and photo classification run in Supabase Edge Functions with Google Gemini:
-see [docs/SUPABASE_MIGRATION.md](docs/SUPABASE_MIGRATION.md) for secrets, deployment and tests.
+React/Vite website (Arabic RTL + English) hosted on Netlify as a static site, with an AI **agent**
+for the whole university community (students, faculty, staff, facilities, sustainability office),
+for any university.
+
+- **Agent** (`supabase/functions/agent`): Gemini function-calling loop (max 4 steps) over role-based
+  tools: classify a photo with the university's own bins, log recycling with points, report or audit
+  bins from a photo, find drop-off points, personal impact, faculty ranking, campus statistics,
+  trend analysis and data-grounded campaigns.
+- **Weekly insights** (`supabase/functions/insights`): pg_cron asks the agent to analyse each
+  university's week and propose 3 interventions.
+- **Database** (`supabase/migrations`): multi-university tenants, roles with invite codes, recorded
+  recycling behaviour, bin reports, agent memory and an audit trail of agent actions, all behind
+  Row Level Security. Points can only be written by the agent (service role), never by the browser.
+- **Website** (`src/agent`): onboarding, agent chat with action cards, photo and voice input,
+  My impact, facilities reports and the campus dashboard.
+
+Setup, in Arabic, step by step and free: **[docs/AGENT_SETUP.md](docs/AGENT_SETUP.md)**.
+Design and plan: `docs/superpowers/specs/` and `docs/superpowers/plans/`.
+The legacy `chat` and `classify` functions are documented in [docs/SUPABASE_MIGRATION.md](docs/SUPABASE_MIGRATION.md).
 
 Supabase project: **`uwxksbwlzjrjlccbdjtk`** (`https://uwxksbwlzjrjlccbdjtk.supabase.co`, ap-south-1). The build refuses any other project.
 
 Local development: copy `.env.example` to `.env.local`, fill in the two public values, then `npm install && npm run dev`.
+
+Tests: `npm run test:sql` (database + RLS, in-memory Postgres), `npm run test:functions` (Edge Functions),
+`npm run test:web` (website helpers), `npm run build && npm run test:e2e` (browser).
 
 ---
 

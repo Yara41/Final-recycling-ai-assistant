@@ -3,8 +3,7 @@
 # Target project (the only one this repo may deploy to):
 #   EcoWasteAI  ref = uwxksbwlzjrjlccbdjtk  region = ap-south-1
 #   https://uwxksbwlzjrjlccbdjtk.supabase.co
-# It already holds the `documents` table and `match_documents`; this repo never
-# writes to them and contains no migrations.
+# Database changes live in supabase/migrations (see docs/AGENT_SETUP.md).
 #
 # Deploy with the pinned npm script (passes --project-ref explicitly):
 #   npm run supabase:deploy
@@ -16,3 +15,10 @@ verify_jwt = true
 
 [functions.classify]
 verify_jwt = true
+
+[functions.agent]
+verify_jwt = true
+
+# Called by pg_cron with the x-cron-secret header (checked against Supabase Vault).
+[functions.insights]
+verify_jwt = false

@@ -7,19 +7,14 @@
 // everything prefixed with VITE_ ends up in the browser. vite.config.js refuses to build
 // if a privileged key is placed here by mistake.
 
+import { ApiError } from './errors.js'
+
 const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 export const apiConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
-export class ApiError extends Error {
-  constructor(message, status = 0, code = '') {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.code = code;
-  }
-}
+export { ApiError }
 
 export async function callFunction(name, payload, { timeoutMs = 60000 } = {}) {
   if (!apiConfigured) {

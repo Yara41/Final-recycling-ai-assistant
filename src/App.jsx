@@ -1,7 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { callFunction } from './lib/api';
+import React, { useEffect, useState } from 'react';
+import AgentPage from './agent/AgentPage.jsx';
 import {
   ArrowUp,
   Camera,
@@ -367,39 +365,6 @@ const CycleArt = () => {
   );
 };
 
-const categoryStyle = {
-  plastic: { Icon: Milk, c: '#e11d48' },
-  paper: { Icon: Package, c: '#2563eb' },
-  metal: { Icon: CupSoda, c: '#4a90d9' },
-  glass: { Icon: GlassWater, c: '#0d9488' },
-  organic: { Icon: Leaf, c: '#16a34a' },
-  hazardous: { Icon: ShieldAlert, c: '#ea580c' },
-  general: { Icon: Trash2, c: '#6b7280' },
-};
-
-const ClassificationCard = ({ data, onAsk }) => {
-  const meta = categoryMeta[data.category] || categoryMeta.general;
-  const { Icon, c } = categoryStyle[data.category] || categoryStyle.general;
-  return (
-    <div className="chat-class-card" style={{ '--c': c }}>
-      <div className="chat-class-top">
-        <span className="chat-class-tile"><Icon size={22} /></span>
-        <div>
-          <strong>{data.item}</strong>
-          <span>{tr(meta.label)}</span>
-        </div>
-      </div>
-      <div className={`chat-class-badge ${data.recyclable ? 'ok' : 'bad'}`}>
-        {data.recyclable ? <Recycle size={15} /> : <XCircle size={15} />}
-        {tr(data.recyclable ? 'قابلة لإعادة التدوير' : 'غير قابلة لإعادة التدوير')}
-      </div>
-      {data.tip && <p>{data.tip}</p>}
-      {data.confidence < 0.6 && <p className="chat-class-warn">{tr('النتيجة غير مؤكدة، جرّب صورة أوضح.')}</p>}
-      <button type="button" onClick={() => onAsk(LANG === 'en' ? `How do I dispose of ${data.item} properly?` : `كيف أتخلص من ${data.item} بشكل صحيح؟`)}>{tr('اسأل عن طريقة التخلص')}</button>
-    </div>
-  );
-};
-
 const BinArt = ({ id }) => {
   const c = BIN_COLORS[id];
   return (
@@ -453,83 +418,6 @@ const goldenInstructions = [
   'تخلص من النفايات الخطرة (مثل البطاريات والأدوية) في نقاط الجمع المخصصة ولا تخلطها أبداً.',
 ];
 
-const CONV_KEY = 'ecowaste_conversations_v1';
-const ACTIVE_KEY = 'ecowaste_active_chat';
-
-const welcomeText =
-  'مرحباً بك في EcoWasteAI 🌱\n\n' +
-  'أنا مساعدك الذكي للتعرّف على ممارسات إعادة التدوير والاستدامة. اسألني عن فرز النفايات أو الاستدامة داخل الجامعة.';
-
-const initialMessage = { id: 1, role: 'ai', text: welcomeText };
-
-const categoryMeta = {
-  plastic: { label: 'البلاستيك', icon: '♻️' },
-  paper: { label: 'الورق والكرتون', icon: '📦' },
-  metal: { label: 'المعادن', icon: '🥫' },
-  glass: { label: 'الزجاج', icon: '🍾' },
-  organic: { label: 'نفايات عضوية', icon: '🍃' },
-  hazardous: { label: 'نفايات خطرة', icon: '⚠️' },
-  general: { label: 'نفايات عامة', icon: '🗑️' },
-};
-
-const createChatTitle = (text) => {
-  const clean = text.trim();
-  return clean.length > 32 ? `${clean.slice(0, 32)}...` : clean;
-};
-
-const createConversation = () => ({
-  id: `c_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-  title: 'محادثة جديدة',
-  messages: [initialMessage],
-  updatedAt: Date.now(),
-});
-
-const isEmptyChat = (chat) => chat.messages.length <= 1;
-
-const formatChatDate = (ts) =>
-  new Date(ts).toLocaleDateString(LANG === 'en' ? 'en-US' : 'ar-JO', { day: 'numeric', month: 'short' });
-
-const loadConversations = () => {
-  try {
-    const saved = JSON.parse(localStorage.getItem(CONV_KEY));
-    if (Array.isArray(saved) && saved.length) return saved;
-  } catch {
-    /* ignore */
-  }
-  // ترحيل المحادثة القديمة (إن وُجدت) إلى النظام الجديد
-  try {
-    const old = JSON.parse(localStorage.getItem('uni_chat_messages'));
-    if (Array.isArray(old) && old.length > 1) {
-      const firstUser = old.find((m) => m.role === 'user');
-      return [{ ...createConversation(), title: firstUser ? createChatTitle(firstUser.text) : 'محادثة سابقة', messages: old }];
-    }
-  } catch {
-    /* ignore */
-  }
-  return [createConversation()];
-};
-
-// تصغير الصورة قبل الإرسال (صور الجوال كبيرة، والدالة تقبل صوراً حتى 4MB تقريباً)
-const resizeImage = (file, maxSize = 1024) =>
-  new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('bad image'));
-    };
-    img.src = url;
-  });
-
 const featureCards = [
   { id: 'ask', Icon: Sparkles, title: 'اسأل', page: 'assistant', text: 'اسأل الوكيل الذكي عن أي نفاية بالعربية أو الإنكليزية، واحصل على إجابة سريعة وواضحة.' },
   { id: 'learn', Icon: BookOpen, title: 'تعلّم', page: 'learn', text: 'دليل بسيط ومصوّر يشرح الفرز الصحيح لكل نوع من النفايات داخل الجامعة.' },
@@ -547,177 +435,17 @@ export default function App() {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const [initial] = useState(() => {
-    const list = loadConversations();
-    const saved = localStorage.getItem(ACTIVE_KEY);
-    return { list, id: list.some((c) => c.id === saved) ? saved : list[0].id };
-  });
-
   const [activePage, setActivePage] = useState('home');
   const [binTab, setBinTab] = useState('plastic');
-  const [conversations, setConversations] = useState(initial.list);
-  const [activeId, setActiveId] = useState(initial.id);
-  const [showHistory, setShowHistory] = useState(false);
-
-  const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const messagesBoxRef = useRef(null);
-  const chatFileRef = useRef(null);
-  const [loadingText, setLoadingText] = useState('جاري البحث...');
-
-  const activeChat = conversations.find((c) => c.id === activeId) || conversations[0];
-  const messages = activeChat.messages;
-  const savedChats = conversations
-    .filter((c) => !isEmptyChat(c))
-    .sort((a, b) => b.updatedAt - a.updatedAt);
-
-  useEffect(() => {
-    localStorage.setItem(CONV_KEY, JSON.stringify(conversations));
-  }, [conversations]);
-
-  useEffect(() => {
-    localStorage.setItem(ACTIVE_KEY, activeChat.id);
-  }, [activeChat.id]);
-
-  useEffect(() => {
-    const box = messagesBoxRef.current;
-    if (box) {
-      box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
-    }
-  }, [messages, isLoading, activePage, activeId]);
-
-  const updateChat = (id, updater) =>
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id ? { ...updater(c), updatedAt: Date.now() } : c))
-    );
-
-  const startNewChat = () => {
-    setShowHistory(false);
-    if (isEmptyChat(activeChat)) return;
-    const fresh = createConversation();
-    setConversations((prev) => [fresh, ...prev]);
-    setActiveId(fresh.id);
-  };
-
-  const openChat = (id) => {
-    setActiveId(id);
-    setShowHistory(false);
-  };
-
-  const deleteChat = (id) => {
-    if (!window.confirm(tr('هل تريد حذف هذه المحادثة؟'))) return;
-    const rest = conversations.filter((c) => c.id !== id);
-    if (rest.length === 0) {
-      const fresh = createConversation();
-      setConversations([fresh]);
-      setActiveId(fresh.id);
-      return;
-    }
-    setConversations(rest);
-    if (id === activeId) {
-      setActiveId([...rest].sort((a, b) => b.updatedAt - a.updatedAt)[0].id);
-    }
-  };
-
-  const sendMessage = async (messageText) => {
-    if (!messageText.trim() || isLoading) return;
-
-    const chatId = activeChat.id;
-    const userMessage = { id: Date.now(), role: 'user', text: messageText };
-    updateChat(chatId, (c) => ({
-      ...c,
-      title: isEmptyChat(c) ? createChatTitle(messageText) : c.title,
-      messages: [...c.messages, userMessage],
-    }));
-    setInputValue('');
-    setLoadingText('جاري البحث...');
-    setIsLoading(true);
-
-    let replyText;
-    try {
-      // Supabase Edge Function "chat" (see supabase/functions/chat)
-      const data = await callFunction('chat', { question: messageText, lang: LANG });
-
-      const answer = data.answer || data.reply || data.output || data.text;
-      replyText = answer || 'لم تصل إجابة من الخادم.';
-    } catch (error) {
-      replyText = error.status === 429
-        ? 'وصلت طلبات كثيرة خلال وقت قصير. انتظر دقيقة ثم حاول مرة أخرى.'
-        : 'الخادم غير متاح حالياً، حاول لاحقاً.';
-    }
-
-    updateChat(chatId, (c) => ({
-      ...c,
-      messages: [...c.messages, { id: Date.now() + 1, role: 'ai', text: replyText }],
-    }));
-    setIsLoading(false);
-  };
-
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    sendMessage(inputValue);
-  };
+  // A question handed to the agent from elsewhere on the site (e.g. the universities map).
+  const [agentPrompt, setAgentPrompt] = useState('');
 
   const navigateTo = (page) => {
     setActivePage(page === 'learn' ? 'learn' : page === 'home' ? 'home' : 'assistant');
     setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const sendImage = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file || isLoading) return;
-
-    const chatId = activeChat.id;
-    setLoadingText('جاري تحليل الصورة...');
-    setIsLoading(true);
-
-    let image;
-    let thumb;
-    try {
-      image = await resizeImage(file);
-      thumb = `data:image/jpeg;base64,${await resizeImage(file, 220)}`;
-    } catch (error) {
-      setIsLoading(false);
-      return;
-    }
-
-    updateChat(chatId, (c) => ({
-      ...c,
-      title: isEmptyChat(c) ? 'تصنيف صورة نفاية' : c.title,
-      messages: [...c.messages, { id: Date.now(), role: 'user', text: '', image: thumb }],
-    }));
-
-    let reply;
-    try {
-      // Supabase Edge Function "classify" (see supabase/functions/classify)
-      const data = await callFunction('classify', { image, mimeType: 'image/jpeg', lang: LANG });
-      reply = data.is_waste === false
-        ? { text: 'لم أتعرّف على نفاية في الصورة. جرّب صورة أوضح وأقرب للعنصر.' }
-        : { text: '', classification: data };
-    } catch (error) {
-      reply = {
-        text: error.status === 429
-          ? 'وصلت طلبات كثيرة خلال وقت قصير. انتظر دقيقة ثم حاول مرة أخرى.'
-          : 'تعذّر تحليل الصورة حالياً، حاول مرة أخرى.',
-      };
-    }
-
-    updateChat(chatId, (c) => ({
-      ...c,
-      messages: [...c.messages, { id: Date.now() + 1, role: 'ai', ...reply }],
-    }));
-    setIsLoading(false);
-    setLoadingText('جاري البحث...');
-  };
-
-  const isOnlyWelcome =
-    messages.length === 1 &&
-    messages[0].role === 'ai' &&
-    messages[0].text === welcomeText;
 
   return (
     <div className={`site ${activePage === 'assistant' ? 'is-assistant' : ''} ${activePage === 'home' ? 'is-home' : ''}`} dir={dir}>
@@ -785,8 +513,8 @@ export default function App() {
 
           <JordanUniversityMap
             onAskAI={({ question }) => {
+              setAgentPrompt(question);
               navigateTo('assistant');
-              sendMessage(question);
             }}
           />
 
@@ -810,101 +538,11 @@ export default function App() {
         </main>
       )}
 
-      {/* ASSISTANT */}
+      {/* ASSISTANT: the campus sustainability agent (src/agent) */}
       {activePage === 'assistant' && (
-        <main className={`page assistant-page ${isOnlyWelcome ? 'welcome-mode' : ''}`}>
+        <main className="page assistant-page">
           <img src="/hero.jpg" alt="" className="assistant-bg" />
-
-          {showHistory && <div className="history-overlay" onClick={() => setShowHistory(false)} />}
-          <aside className={`chat-sidebar ${showHistory ? 'open' : ''}`} dir={dir}>
-            <div className="sidebar-top">
-              <div className="sidebar-logo"><img src="/logo.png" alt="EcoWasteAI" /></div>
-              <button type="button" className="chat-head-btn sidebar-close" onClick={() => setShowHistory(false)} aria-label="close"><X size={18} /></button>
-            </div>
-            <button type="button" className="sidebar-new" onClick={startNewChat}><Plus size={17} /> {tr('محادثة جديدة')}</button>
-            <div className="sidebar-title">{tr('محادثاتي')}</div>
-            <div className="chat-history">
-              {savedChats.length === 0 ? (
-                <p className="chat-history-empty">{tr('لا توجد محادثات محفوظة بعد.')}</p>
-              ) : (
-                savedChats.map((chat) => (
-                  <div key={chat.id} className={`chat-history-item ${chat.id === activeId ? 'current' : ''}`}>
-                    <button type="button" className="chat-history-open" onClick={() => openChat(chat.id)}>
-                      <span className="chat-history-name">{tr(chat.title)}</span>
-                      <span className="chat-history-date">{formatChatDate(chat.updatedAt)}</span>
-                    </button>
-                    <button type="button" className="chat-history-delete" onClick={() => deleteChat(chat.id)} aria-label={tr('حذف المحادثة')}><Trash2 size={16} /></button>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="sidebar-links">
-              {SIDE_LINKS.map((l) => (
-                <a key={l.href} className="sidebar-link" href={l.href} target="_blank" rel="noreferrer">
-                  <span><strong>{tr(l.title)}</strong><small>{tr(l.desc)}</small></span>
-                  <ExternalLink size={14} />
-                </a>
-              ))}
-            </div>
-          </aside>
-
-          <section dir={dir} className={`assistant-main ${isOnlyWelcome ? 'is-welcome' : ''}`}>
-            <div className="assistant-toolbar">
-              <button type="button" className="tool-btn only-mobile" onClick={() => setShowHistory(true)}><History size={16} /> {tr('المحادثات')}</button>
-              <button type="button" className="tool-btn only-mobile" onClick={startNewChat}><Plus size={16} /> {tr('محادثة جديدة')}</button>
-            </div>
-
-            {isOnlyWelcome ? (
-              <div className="assistant-welcome">
-                <span className="hero-small-title">{tr('الاستدامة تبدأ بخطوة')}</span>
-                <h1>{tr('خطوة صغيرة،')}<br /><span>{tr('أثر كبير.')}</span></h1>
-                <p>{tr('اسألني عن إعادة التدوير والفرز، أو صوّر أي نفاية وأخبرك أين ترميها.')}</p>
-              </div>
-            ) : (
-              <div className="assistant-messages" ref={messagesBoxRef}>
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`chat-message ${msg.role === 'user' ? 'chat-user' : 'chat-ai'}`}>
-                    {msg.role === 'ai' ? (
-                      msg.classification ? (
-                        <ClassificationCard data={msg.classification} onAsk={sendMessage} />
-                      ) : (
-                        <div className="markdown-content">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{tr(msg.text)}</ReactMarkdown>
-                        </div>
-                      )
-                    ) : (
-                      <div className="user-message-text">
-                        {msg.image && <img src={msg.image} alt="الصورة المرسلة" className="chat-msg-image" />}
-                        {msg.text}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="chat-message chat-ai loading-message">
-                    <span></span><span></span><span></span>
-                    <span className="loading-text">{tr(loadingText)}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <form className="assistant-input" onSubmit={handleSendMessage}>
-              <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder={tr('اكتب سؤالك هنا...')} disabled={isLoading} />
-              <input ref={chatFileRef} type="file" accept="image/*" hidden onChange={sendImage} />
-              <button type="button" className="chat-camera-btn" onClick={() => chatFileRef.current?.click()} disabled={isLoading} aria-label="أرسل صورة نفاية"><Camera size={19} /></button>
-              <button type="submit" aria-label="إرسال" disabled={isLoading || !inputValue.trim()}><ArrowUp size={19} /></button>
-            </form>
-
-            {isOnlyWelcome && (
-              <div className="suggested-questions">
-                <button type="button" onClick={() => sendMessage(tr('كيف يمكن فرز النفايات داخل الجامعة؟'))}>{tr('كيف أفرز النفايات؟')}</button>
-                <button type="button" onClick={() => sendMessage(tr('ما أهمية إعادة التدوير؟'))}>{tr('لماذا نعيد التدوير؟')}</button>
-                <button type="button" onClick={() => sendMessage(tr('هل علبة البيتزا الدهنية تُعاد تدويرها؟'))}>{tr('هل علبة البيتزا تُعاد تدويرها؟')}</button>
-                <button type="button" onClick={() => chatFileRef.current?.click()}><Camera size={14} /> {tr('صوّر نفاية')}</button>
-              </div>
-            )}
-          </section>
+          <AgentPage lang={lang} dir={dir} prompt={agentPrompt} />
         </main>
       )}
 
