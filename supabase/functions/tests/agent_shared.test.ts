@@ -78,11 +78,12 @@ Deno.test("serviceRpc maps unknown database errors to 502 db_failed", async () =
 
 const textReply = (text: string) => ok({ candidates: [{ content: { parts: [{ text }] }, finishReason: "STOP" }] });
 
-Deno.test("generate falls back from flash to flash-lite on 429", async () => {
+Deno.test("generate uses the always-current Flash aliases and falls back to Flash-Lite on 429", async () => {
   setEnv();
-  mockFetch((url) => url.includes("gemini-2.5-flash:") ? status(429, { error: { message: "quota" } }) : textReply("hi"));
+  mockFetch((url) => url.includes("/gemini-flash-latest:") ? status(429, { error: { message: "quota" } }) : textReply("hi"));
   const out = await generate({ system: "s", contents: [{ role: "user", parts: [{ text: "q" }] }] });
-  assert.equal(out.model, "gemini-2.5-flash-lite");
+  assert.match(calls[0].url, /\/gemini-flash-latest:generateContent$/);
+  assert.equal(out.model, "gemini-flash-lite-latest");
   assert.equal(out.parts[0].text, "hi");
   assert.equal(calls.length, 2);
   globalThis.fetch = realFetch;
@@ -99,14 +100,33 @@ Deno.test("generate stops on 403 and throws model_unavailable", async () => {
   globalThis.fetch = realFetch;
 });
 
-Deno.test("generate sends tools as functionDeclarations and disables thinking", async () => {
+Deno.test("generate falls back when a model is retired (404)", async () => {
+  setEnv();
+  mockFetch((url) => url.includes("/gemini-flash-latest:") ? status(404, { error: { message: "no longer available" } }) : textReply("ok"));
+  const out = await generate({ system: "s", contents: [{ role: "user", parts: [{ text: "q" }] }] });
+  assert.equal(out.model, "gemini-flash-lite-latest");
+  globalThis.fetch = realFetch;
+});
+
+Deno.test("GEMINI_AGENT_MODEL overrides the first model and 2.5 models get thinking disabled", async () => {
+  setEnv();
+  Deno.env.set("GEMINI_AGENT_MODEL", "gemini-2.5-flash");
+  mockFetch(() => textReply("hi"));
+  await generate({ system: "s", contents: [{ role: "user", parts: [{ text: "q" }] }] });
+  assert.match(calls[0].url, /\/gemini-2\.5-flash:generateContent$/);
+  assert.deepEqual(calls[0].body.generationConfig.thinkingConfig, { thinkingBudget: 0 });
+  Deno.env.delete("GEMINI_AGENT_MODEL");
+  globalThis.fetch = realFetch;
+});
+
+Deno.test("generate sends tools as functionDeclarations", async () => {
   setEnv();
   mockFetch(() => ok({ candidates: [{ content: { parts: [{ functionCall: { name: "t", args: {} } }] } }] }));
   const decl = { name: "t", description: "d", parameters: { type: "OBJECT", properties: {} } };
   const out = await generate({ system: "s", contents: [{ role: "user", parts: [{ text: "q" }] }], tools: [decl] });
   assert.deepEqual(calls[0].body.tools, [{ functionDeclarations: [decl] }]);
   assert.equal(calls[0].body.generationConfig.temperature, 0.2);
-  assert.deepEqual(calls[0].body.generationConfig.thinkingConfig, { thinkingBudget: 0 });
+  assert.equal(calls[0].body.generationConfig.thinkingConfig, undefined);
   assert.equal(out.parts[0].functionCall?.name, "t");
   globalThis.fetch = realFetch;
 });

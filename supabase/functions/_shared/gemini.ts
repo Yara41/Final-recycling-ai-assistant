@@ -27,9 +27,11 @@ function key(): string {
   return env("GEMINI_API_KEY");
 }
 
+// "-latest" aliases always point to Google's current Flash models, so the agent keeps
+// working when a model version is retired. GEMINI_AGENT_MODEL can pin a specific model.
 export function agentModels(): string[] {
-  const preferred = env("GEMINI_AGENT_MODEL") || "gemini-2.5-flash";
-  return [...new Set([preferred, "gemini-2.5-flash-lite"])];
+  const preferred = env("GEMINI_AGENT_MODEL") || "gemini-flash-latest";
+  return [...new Set([preferred, "gemini-flash-latest", "gemini-flash-lite-latest"])];
 }
 
 export async function embed(text: string): Promise<number[]> {
