@@ -79,3 +79,29 @@ test('a photo is resized and sent as JPEG', async () => {
   assert.deepEqual(dims, [1024, 683]);
   await context.close();
 });
+
+test('the "agent is working" text stays on one line (Arabic, RTL)', async () => {
+  const { page, context } = await openApp(browser, { profile: profile() }, { lang: 'ar' });
+  await page.setViewportSize({ width: 1530, height: 800 });
+  await page.getByRole('button', { name: /اسأل الوكيل/ }).first().click();
+  await page.route('**/functions/v1/agent', async (route) => {
+    await new Promise((r) => setTimeout(r, 1500));
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ reply: 'تمام', actions: [], conversationId: 'c1' }) });
+  });
+  await page.getByPlaceholder(/رسالتك/).fill('رميت عبوة ماء في حاوية البلاستيك');
+  await page.getByRole('button', { name: 'إرسال', exact: true }).click();
+  const box = await page.locator('.loading-text').boundingBox();
+  assert.ok(box && box.height < 30, `loading text height ${box?.height}`);
+  await context.close();
+});
+
+test('My impact shows how many items were verified by photo', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    impact: { items: 5, est_kg: 0.1, est_co2e_kg: 0.2, points: 30, correct_pct: 100, streak_days: 1, verified_items: 3 },
+  });
+  await page.getByRole('tab', { name: 'My impact' }).click();
+  await page.getByText(/verified by photo/i).waitFor();
+  assert.equal(await page.locator('.stat-tile', { hasText: /verified by photo/i }).locator('strong').textContent(), '3');
+  await context.close();
+});

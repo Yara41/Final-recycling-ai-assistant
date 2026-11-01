@@ -95,6 +95,7 @@ Deno.test("log_recycling returns a logged card with points from the database", a
   assert.match(calls[0].url, /rpc\/log_recycling_event$/);
   assert.deepEqual(calls[0].body, {
     p_user: "u1", p_item: "Bottle", p_category: "plastic", p_bin: "plastic", p_quantity: 2, p_location: LOC, p_source: "chat",
+    p_image_hash: null,
   });
   globalThis.fetch = realFetch;
 });
@@ -204,5 +205,34 @@ Deno.test("analyze_trends returns exactly three recommendations", async () => {
   assert.equal((r.data as any).recommendations.length, 3);
   const stats = calls.find((c) => c.url.includes("rpc/university_stats"))!;
   assert.equal((stats.init.headers as Record<string, string>).Authorization, "Bearer user-jwt");
+  globalThis.fetch = realFetch;
+});
+
+Deno.test("log_recycling with a photo sends the photo's SHA-256 as p_image_hash", async () => {
+  setEnv();
+  mockFetch(() => ok({ event_id: "e1", correct_bin: true, points: 10, verification: "photo", est_kg: 0.025, est_co2e_kg: 0.025, correct_bins: ["plastic"] }));
+  await runTool("log_recycling", { item: "Bottle", category: "plastic", bin: "plastic" }, ctx({ image: IMG }));
+  const expected = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(IMG.data))))
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+  assert.equal(calls[0].body.p_image_hash, expected);
+  assert.equal(calls[0].body.p_source, "photo");
+  globalThis.fetch = realFetch;
+});
+
+Deno.test("a self-reported item gets no points and the card asks for a photo", async () => {
+  setEnv();
+  mockFetch(() => ok({ event_id: "e1", correct_bin: true, points: 0, verification: "self_reported", est_kg: 0.025, est_co2e_kg: 0.025, correct_bins: ["plastic"] }));
+  const r = await runTool("log_recycling", { item: "Bottle", category: "plastic", bin: "plastic" }, ctx({ lang: "en" }));
+  assert.equal(r.card?.points, 0);
+  assert.match(r.card?.detail ?? "", /photo/i);
+  assert.equal((r.data as any).verification, "self_reported");
+  globalThis.fetch = realFetch;
+});
+
+Deno.test("a reused photo surfaces as duplicate_photo", async () => {
+  setEnv();
+  mockFetch(() => new Response(JSON.stringify({ code: "P0001", message: "duplicate_photo" }), { status: 400 }));
+  const r = await runTool("log_recycling", { item: "Bottle", category: "plastic", bin: "plastic" }, ctx({ image: IMG }));
+  assert.deepEqual([r.ok, r.error], [false, "duplicate_photo"]);
   globalThis.fetch = realFetch;
 });

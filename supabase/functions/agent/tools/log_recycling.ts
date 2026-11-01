@@ -3,7 +3,16 @@ import type { Tool } from "../types.ts";
 import { CATEGORIES } from "../types.ts";
 import { binLabel, fail, guarded, isUuid, str, t } from "./util.ts";
 
-type Logged = { event_id: string; correct_bin: boolean; points: number; est_kg: number; est_co2e_kg: number; correct_bins: string[] };
+type Logged = {
+  event_id: string; correct_bin: boolean; points: number; verification: "photo" | "self_reported"; capped?: boolean;
+  est_kg: number; est_co2e_kg: number; correct_bins: string[];
+};
+
+// Fingerprint of the uploaded photo, so the same photo can never earn points twice.
+async function photoHash(data: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(data));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export const logRecycling: Tool = {
   name: "log_recycling",
@@ -45,6 +54,7 @@ export const logRecycling: Tool = {
         p_quantity: quantity,
         p_location: location,
         p_source: ctx.image ? "photo" : "chat",
+        p_image_hash: ctx.image ? await photoHash(ctx.image.data) : null,
       });
       const right = (r.correct_bins ?? []).map((id) => binLabel(ctx, id)).join(" / ");
       return {
@@ -53,9 +63,13 @@ export const logRecycling: Tool = {
         card: {
           kind: "logged",
           title: t(ctx, `سجّلت ${quantity} × ${item}`, `Logged ${quantity} × ${item}`),
-          detail: r.correct_bin
-            ? t(ctx, `فرز صحيح ✔ وفّرت تقريباً ${Number(r.est_co2e_kg).toFixed(2)} كغ CO₂e (تقديري)`, `Correctly sorted ✔ about ${Number(r.est_co2e_kg).toFixed(2)} kg CO₂e saved (estimate)`)
-            : t(ctx, `الحاوية الصحيحة: ${right}`, `Right bin: ${right}`),
+          detail: !r.correct_bin
+            ? t(ctx, `الحاوية الصحيحة: ${right}`, `Right bin: ${right}`)
+            : r.verification !== "photo"
+            ? t(ctx, `سجّلتها كمبلَّغ عنها بدون نقاط. صوّر الغرض المرة الجاية لتحصل على النقاط 📸`, `Recorded as self-reported, no points. Send a photo of the item next time to earn points 📸`)
+            : r.capped
+            ? t(ctx, `فرز صحيح ✔ وصلت للحد اليومي للنقاط`, `Correctly sorted ✔ daily points limit reached`)
+            : t(ctx, `فرز صحيح ✔ موثّق بصورة • وفّرت تقريباً ${Number(r.est_co2e_kg).toFixed(2)} كغ CO₂e (تقديري)`, `Correctly sorted ✔ photo-verified • about ${Number(r.est_co2e_kg).toFixed(2)} kg CO₂e saved (estimate)`),
           points: r.points,
         },
       };

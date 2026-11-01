@@ -102,6 +102,10 @@ Deno.test("model failure before any tool rethrows", async () => {
   await assert.rejects(runAgent({ ctx: ctx(), history: [], message: "hi", hasImage: false }, { generate, runTool }), /busy/);
 });
 
+Deno.test("system prompt explains that points need a photo", () => {
+  assert.match(buildSystemPrompt(ctx()), /points only for items .*photo/i);
+});
+
 Deno.test("system prompt makes the agent file bin reports itself", () => {
   const p = buildSystemPrompt(ctx());
   assert.match(p, /never tell the user to report it themselves/i);

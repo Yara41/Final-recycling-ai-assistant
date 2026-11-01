@@ -89,7 +89,7 @@ begin
         i := ((d * 3 + u * 5) % 8) + 1;
         v_item := items[i][1]; v_cat := items[i][2]; v_bin := items[i][3];
       end if;
-      r := public.log_recycling_event(v_user, v_item, v_cat, v_bin, 1 + (d + u) % 3, stations[u], 'photo');
+      r := public.log_recycling_event(v_user, v_item, v_cat, v_bin, 1 + (d + u) % 3, stations[u], 'photo', md5('demo-' || d || '-' || u));
       update public.recycling_events
          set created_at = now() - make_interval(days => d, hours => (u * 3) % 10)
        where id = (r ->> 'event_id')::uuid;

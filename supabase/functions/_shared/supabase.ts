@@ -16,6 +16,7 @@ const KNOWN_DB_ERRORS = [
   "insufficient_privilege",
   "no_profile",
   "report_not_found",
+  "duplicate_photo",
 ];
 
 function base(): string {
