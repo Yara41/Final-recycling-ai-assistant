@@ -136,3 +136,5 @@
 .assistant-page > .onboarding,
 .assistant-page > .agent-center,
 .assistant-page > .agent-shell { flex: 1; position: relative; z-index: 2; height: 100%; min-height: 0; overflow: auto; }
+.agent-body { flex: 1; min-height: 0; display: flex; direction: ltr; position: relative; }
+.agent-shell .dash { overflow: auto; }
