@@ -27,11 +27,12 @@ function key(): string {
   return env("GEMINI_API_KEY");
 }
 
-// "-latest" aliases always point to Google's current Flash models, so the agent keeps
-// working when a model version is retired. GEMINI_AGENT_MODEL can pin a specific model.
+// "-latest" aliases always point to Google's current models, so the agent keeps working
+// when a model version is retired. Flash-Lite goes first: it answers tool-calling turns in a
+// few seconds, while full Flash can think for over 30 s. GEMINI_AGENT_MODEL can pin a model.
 export function agentModels(): string[] {
-  const preferred = env("GEMINI_AGENT_MODEL") || "gemini-flash-latest";
-  return [...new Set([preferred, "gemini-flash-latest", "gemini-flash-lite-latest"])];
+  const preferred = env("GEMINI_AGENT_MODEL") || "gemini-flash-lite-latest";
+  return [...new Set([preferred, "gemini-flash-lite-latest", "gemini-flash-latest"])];
 }
 
 export async function embed(text: string): Promise<number[]> {

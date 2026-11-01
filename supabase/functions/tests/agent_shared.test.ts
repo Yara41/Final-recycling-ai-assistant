@@ -78,12 +78,12 @@ Deno.test("serviceRpc maps unknown database errors to 502 db_failed", async () =
 
 const textReply = (text: string) => ok({ candidates: [{ content: { parts: [{ text }] }, finishReason: "STOP" }] });
 
-Deno.test("generate uses the always-current Flash aliases and falls back to Flash-Lite on 429", async () => {
+Deno.test("generate tries fast Flash-Lite first and falls back to Flash on 429", async () => {
   setEnv();
-  mockFetch((url) => url.includes("/gemini-flash-latest:") ? status(429, { error: { message: "quota" } }) : textReply("hi"));
+  mockFetch((url) => url.includes("/gemini-flash-lite-latest:") ? status(429, { error: { message: "quota" } }) : textReply("hi"));
   const out = await generate({ system: "s", contents: [{ role: "user", parts: [{ text: "q" }] }] });
-  assert.match(calls[0].url, /\/gemini-flash-latest:generateContent$/);
-  assert.equal(out.model, "gemini-flash-lite-latest");
+  assert.match(calls[0].url, /\/gemini-flash-lite-latest:generateContent$/);
+  assert.equal(out.model, "gemini-flash-latest");
   assert.equal(out.parts[0].text, "hi");
   assert.equal(calls.length, 2);
   globalThis.fetch = realFetch;
@@ -102,9 +102,9 @@ Deno.test("generate stops on 403 and throws model_unavailable", async () => {
 
 Deno.test("generate falls back when a model is retired (404)", async () => {
   setEnv();
-  mockFetch((url) => url.includes("/gemini-flash-latest:") ? status(404, { error: { message: "no longer available" } }) : textReply("ok"));
+  mockFetch((url) => url.includes("/gemini-flash-lite-latest:") ? status(404, { error: { message: "no longer available" } }) : textReply("ok"));
   const out = await generate({ system: "s", contents: [{ role: "user", parts: [{ text: "q" }] }] });
-  assert.equal(out.model, "gemini-flash-lite-latest");
+  assert.equal(out.model, "gemini-flash-latest");
   globalThis.fetch = realFetch;
 });
 
