@@ -138,3 +138,7 @@
 .assistant-page > .agent-shell { flex: 1; position: relative; z-index: 2; height: 100%; min-height: 0; overflow: auto; }
 .agent-body { flex: 1; min-height: 0; display: flex; direction: ltr; position: relative; }
 .agent-shell .dash { overflow: auto; }
+
+/* "the agent is working…" bubble: size to its content and never wrap the label */
+.agent-body .loading-message { width: max-content; max-width: 100%; }
+.agent-body .loading-text { white-space: nowrap; }

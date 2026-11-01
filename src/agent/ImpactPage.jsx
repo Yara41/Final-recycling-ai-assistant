@@ -25,11 +25,12 @@ export default function ImpactPage({ profile, lang }) {
       <div className="dash-grid">
         <div className="stat-tile"><span>{s.points}</span><strong>{d.points}</strong></div>
         <div className="stat-tile"><span>{s.items}</span><strong>{d.items}</strong></div>
+        <div className="stat-tile"><span>{s.verified}</span><strong>{d.verified_items ?? 0}</strong></div>
         <div className="stat-tile"><span>{s.co2}</span><strong>{Number(d.est_co2e_kg).toFixed(2)}</strong><small>({s.estimate})</small></div>
         <div className="stat-tile"><span>{s.correct}</span><strong>{d.correct_pct}%</strong></div>
         <div className="stat-tile"><span>{s.streak}</span><strong>{d.streak_days}</strong></div>
       </div>
-      {Number(d.items) === 0 && <p className="dash-muted">{s.noData}</p>}
+      {Number(d.items) === 0 ? <p className="dash-muted">{s.noData}</p> : <p className="dash-muted">{s.verifiedHint}</p>}
       <div className="dash-card">
         <h2>{s.ranking}</h2>
         <ul className="dash-list">

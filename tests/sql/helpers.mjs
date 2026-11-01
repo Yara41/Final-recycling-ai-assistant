@@ -10,6 +10,7 @@ const root = new URL('../../', import.meta.url);
 const read = (p) => readFile(new URL(p, root), 'utf8');
 
 export const MIGRATION = 'supabase/migrations/20261031120000_campus_agent.sql';
+export const VERIFIED = 'supabase/migrations/20261101120000_verified_points.sql';
 export const SEED = 'supabase/seed/demo_university.sql';
 export const DEMO_UNI = '00000000-0000-4000-8000-000000000001';
 
@@ -43,6 +44,7 @@ export async function freshDb({ seed = true } = {}) {
   const db = await PGlite.create({ extensions: { vector, pgcrypto } });
   await db.exec(SUPABASE_STUB);
   await db.exec(await read(MIGRATION));
+  await db.exec(await read(VERIFIED));
   if (seed) await db.exec(await read(SEED));
   return db;
 }

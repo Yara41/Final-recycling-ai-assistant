@@ -4,8 +4,10 @@ import { freshDb, asUser, asService, member, addUser, addUniversity, rows, one, 
 
 const A = '20000000-0000-4000-8000-00000000000a';
 const B = '20000000-0000-4000-8000-00000000000b';
+// Calls log with a unique photo hash, i.e. a photo-verified item (see verification.test.mjs).
+let photo = 0;
 const log = (db, ...args) => asService(db, (tx) => one(tx,
-  'select log_recycling_event($1,$2,$3,$4,$5,$6,$7) r', args)).then((x) => x.r);
+  'select log_recycling_event($1,$2,$3,$4,$5,$6,$7,$8) r', [...args, `photo-${++photo}`])).then((x) => x.r);
 
 test('correct bin awards points_per_item × quantity', async () => {
   const db = await freshDb();
