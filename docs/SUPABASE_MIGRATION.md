@@ -1,3 +1,7 @@
+> **Note (Phase 1 agent):** this page describes the legacy `chat` and `classify` functions. The agent,
+> its database migration and the setup steps are in [AGENT_SETUP.md](AGENT_SETUP.md). The statements
+> below that the repo contains no migrations or writes are no longer true.
+
 # EcoWasteAI: AI backend on Supabase Edge Functions
 
 Netlify now hosts only the static React/Vite build (`dist/`). All AI processing runs in
