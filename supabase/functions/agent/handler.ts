@@ -8,7 +8,7 @@ import { guard, HttpError, json, rateLimit } from "../_shared/security.ts";
 import { getUser, restGet, serviceRpc } from "../_shared/supabase.ts";
 import { runAgent } from "./loop.ts";
 import { isUuid, MAX_IMAGE_BASE64_CHARS } from "./tools/util.ts";
-import type { Role, ToolContext, University } from "./types.ts";
+import type { ActionCard, Role, ToolContext, University } from "./types.ts";
 
 const MAX_MESSAGE_CHARS = 1000;
 const HISTORY_MESSAGES = 12;
@@ -17,6 +17,13 @@ const USER_WINDOW_MS = 10 * 60_000;
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
 type ProfileRow = { role: Role; faculty: string | null; university_id: string; universities: University };
+
+// Lets the model remember what it did in earlier turns (places, items), not only what it said.
+function withActions(text: string, actions: ActionCard[] | undefined): string {
+  if (!actions?.length) return text;
+  const done = actions.map((a) => (a.detail ? `${a.title} (${a.detail})` : a.title)).join("; ");
+  return `${text}\n[Actions done: ${done}]`;
+}
 
 function bearer(req: Request): string {
   const h = req.headers.get("authorization") ?? "";
@@ -69,12 +76,12 @@ export async function handleAgent(req: Request): Promise<Response> {
     const conversationId = isUuid(body.conversationId) ? body.conversationId : null;
     const history: GeminiContent[] = [];
     if (conversationId) {
-      const rows = await restGet<{ role: string; content: string }[]>(
+      const rows = await restGet<{ role: string; content: string; actions?: ActionCard[] }[]>(
         jwt,
-        `messages?select=role,content&conversation_id=eq.${conversationId}&order=id.desc&limit=${HISTORY_MESSAGES}`,
+        `messages?select=role,content,actions&conversation_id=eq.${conversationId}&order=id.desc&limit=${HISTORY_MESSAGES}`,
       );
       for (const m of rows.reverse()) {
-        history.push({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] });
+        history.push({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: withActions(m.content, m.actions) }] });
       }
     }
 

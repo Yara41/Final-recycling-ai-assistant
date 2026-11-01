@@ -87,7 +87,10 @@ Deno.test("the 31st message in 10 minutes from one user gets 429", async () => {
 
 Deno.test("happy path: loads memory with the user's token, saves the turn, returns conversationId", async () => {
   setup();
-  mockFetch(router({ history: [{ role: "assistant", content: "earlier answer" }, { role: "user", content: "earlier question" }] }));
+  mockFetch(router({ history: [
+    { role: "assistant", content: "earlier answer", actions: [{ kind: "logged", title: "Logged 1 × Bottle", detail: "Engineering cafeteria bin station" }] },
+    { role: "user", content: "earlier question", actions: [] },
+  ] }));
   const res = await handleAgent(post({ message: "hello", lang: "en", conversationId: "11111111-1111-4111-8111-111111111111" }));
   assert.equal(res.status, 200);
   const data = await res.json();
@@ -101,8 +104,9 @@ Deno.test("happy path: loads memory with the user's token, saves the turn, retur
   const gem = calls.find((c) => c.url.includes("generateContent"))!;
   assert.deepEqual(gem.body.contents.slice(0, 2).map((c: any) => [c.role, c.parts[0].text]), [
     ["user", "earlier question"],
-    ["model", "earlier answer"],
+    ["model", "earlier answer\n[Actions done: Logged 1 × Bottle (Engineering cafeteria bin station)]"],
   ]);
+  assert.match(hist.url, /select=role,content,actions/);
 
   const save = calls.find((c) => c.url.includes("rpc/save_agent_turn"))!;
   assert.equal(save.body.p_user, "u1");

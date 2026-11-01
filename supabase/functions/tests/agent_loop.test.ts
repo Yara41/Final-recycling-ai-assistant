@@ -102,6 +102,12 @@ Deno.test("model failure before any tool rethrows", async () => {
   await assert.rejects(runAgent({ ctx: ctx(), history: [], message: "hi", hasImage: false }, { generate, runTool }), /busy/);
 });
 
+Deno.test("system prompt makes the agent file bin reports itself", () => {
+  const p = buildSystemPrompt(ctx());
+  assert.match(p, /never tell the user to report it themselves/i);
+  assert.match(p, /earlier in the conversation/i);
+});
+
 Deno.test("system prompt fixes the reply language to lang, not the message language", () => {
   const en = buildSystemPrompt(ctx({ lang: "en" }));
   assert.match(en, /Reply only in English/);
