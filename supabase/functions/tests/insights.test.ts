@@ -21,8 +21,12 @@ function setup() {
   Deno.env.set("SUPABASE_ANON_KEY", "anon-key");
   Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "service-key");
   Deno.env.set("GEMINI_API_KEY", "gem-key");
-  Deno.env.set("CRON_SECRET", "s3cret");
+  Deno.env.delete("CRON_SECRET");
 }
+
+// The database checks the secret (stored only in Supabase Vault).
+const secretCheck = (url: string, body: any) =>
+  url.includes("rpc/verify_cron_secret") ? ok(body?.p_secret === "s3cret") : null;
 
 const req = (secret?: string) =>
   new Request("https://x/functions/v1/insights", {
@@ -36,20 +40,21 @@ const UNIS = [
   { id: "u-b", name: "Uni B", default_language: "ar" },
 ];
 
-Deno.test("missing or wrong secret gives 401 and touches nothing", async () => {
+Deno.test("missing or wrong secret gives 401 and touches nothing else", async () => {
   setup();
-  mockFetch(() => { throw new Error("must not be called"); });
+  mockFetch((url, body) => secretCheck(url, body) ?? (() => { throw new Error("must not be called: " + url); })());
   assert.equal((await handleInsights(req())).status, 401);
+  assert.equal(calls.length, 0, "no header: no database call at all");
   assert.equal((await handleInsights(req("nope"))).status, 401);
-  Deno.env.set("CRON_SECRET", "");
-  assert.equal((await handleInsights(req(""))).status, 401);
-  assert.equal(calls.length, 0);
+  assert.ok(calls.every((c) => c.url.includes("verify_cron_secret")));
   globalThis.fetch = realFetch;
 });
 
 Deno.test("creates one insight per active university", async () => {
   setup();
-  mockFetch((url) => {
+  mockFetch((url, body) => {
+    const check = secretCheck(url, body);
+    if (check) return check;
     if (url.includes("/rest/v1/universities")) return ok(UNIS);
     if (url.includes("rpc/university_stats")) return ok({ totals: { events: 12 }, top_missorted: [] });
     if (url.includes("generateContent")) {
@@ -72,7 +77,9 @@ Deno.test("creates one insight per active university", async () => {
 
 Deno.test("a university with no events gets a 'no data yet' insight without calling Gemini", async () => {
   setup();
-  mockFetch((url) => {
+  mockFetch((url, body) => {
+    const check = secretCheck(url, body);
+    if (check) return check;
     if (url.includes("/rest/v1/universities")) return ok([UNIS[1]]);
     if (url.includes("rpc/university_stats")) return ok({ totals: { events: 0 } });
     if (url.includes("rpc/save_insight")) return ok("ins-1");

@@ -61,17 +61,11 @@ where table_schema = 'public' and table_name = 'documents';
 
 ---
 
-## 4) أضيفي سرّ التقرير الأسبوعي
+## 4) سرّ التقرير الأسبوعي (تلقائي)
 
-اختاري كلمة سر طويلة عشوائية (مثلاً من مولّد كلمات سر)، ثم:
-
-Dashboard ← **Edge Functions** ← **Secrets** ← أضيفي:
-
-| الاسم | القيمة |
-|---|---|
-| `CRON_SECRET` | كلمة السر التي اخترتِها |
-
-الأسرار `GEMINI_API_KEY` موجود أصلاً، و `SUPABASE_URL` و `SUPABASE_ANON_KEY` و `SUPABASE_SERVICE_ROLE_KEY` يضيفها Supabase تلقائياً.
+لا تحتاجين شيئاً هنا: الملف `supabase/migrations/20261031120050_cron_secret.sql` يولّد كلمة سر عشوائية
+داخل قاعدة البيانات ويحفظها في Vault المشفّر، والدالة `insights` تتحقق منها عبر قاعدة البيانات.
+شغّليه في **SQL Editor** بعد ملف الخطوة 3.
 
 ---
 
@@ -88,20 +82,13 @@ npm run supabase:deploy
 ```
 
 هذا ينشر 4 دوال: `chat` و `classify` (القديمة) و `agent` و `insights` (الجديدة).
-دالة `insights` تُنشر بدون تحقق JWT لأنها تتحقق من `CRON_SECRET` بنفسها (مضبوط في `supabase/config.toml`).
+دالة `insights` تُنشر بدون تحقق JWT لأنها تتحقق من سرّ Vault عبر قاعدة البيانات (مضبوط في `supabase/config.toml`).
 
 ---
 
 ## 6) فعّلي التقرير الأسبوعي التلقائي
 
-في **SQL Editor** أنشئي سرّين في Vault (ضعي نفس قيمة `CRON_SECRET`):
-
-```sql
-select vault.create_secret('https://uwxksbwlzjrjlccbdjtk.supabase.co/functions/v1/insights', 'insights_url');
-select vault.create_secret('ضعي-هنا-نفس-CRON_SECRET', 'cron_secret');
-```
-
-ثم انسخي محتوى `supabase/migrations/20261031120100_weekly_insights_cron.sql` والصقيه و **Run**.
+في **SQL Editor** انسخي محتوى `supabase/migrations/20261031120100_weekly_insights_cron.sql` والصقيه و **Run**.
 من الآن، كل يوم اثنين الساعة 06:17 (UTC) يحلّل الإيجنت بيانات كل جامعة ويكتب تقريراً بثلاث توصيات.
 
 لتجربته فوراً بدل انتظار الاثنين:

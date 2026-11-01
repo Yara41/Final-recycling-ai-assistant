@@ -1,8 +1,9 @@
 // Weekly proactive analysis. Called by pg_cron (see supabase/migrations/*_weekly_insights_cron.sql)
-// with header x-cron-secret = CRON_SECRET. For every active university it analyses the last
+// with header x-cron-secret. The secret lives only in Supabase Vault; the database checks it
+// (verify_cron_secret), so it is never copied into function settings. For every active university it analyses the last
 // 7 days and stores a short report with exactly 3 recommendations in `insights`.
 import { serviceGet, serviceRpc } from "../_shared/supabase.ts";
-import { env, json } from "../_shared/security.ts";
+import { json } from "../_shared/security.ts";
 import { analyzeStats } from "../agent/tools/admin.ts";
 import { period } from "../agent/tools/util.ts";
 
@@ -18,11 +19,12 @@ function report(summary: string, recommendations: string[]): string {
 }
 
 export async function handleInsights(req: Request): Promise<Response> {
-  const secret = env("CRON_SECRET");
-  if (!secret || req.headers.get("x-cron-secret") !== secret) {
-    return json({ error: "Unauthorized", code: "unauthorized" }, 401, {});
-  }
+  const given = req.headers.get("x-cron-secret") ?? "";
+  if (!given) return json({ error: "Unauthorized", code: "unauthorized" }, 401, {});
   try {
+    const valid = await serviceRpc<boolean>("verify_cron_secret", { p_secret: given });
+    if (valid !== true) return json({ error: "Unauthorized", code: "unauthorized" }, 401, {});
+
     const body = await req.json().catch(() => ({}));
     const only = typeof body?.universityId === "string" ? `&id=eq.${encodeURIComponent(body.universityId)}` : "";
     const unis = await serviceGet<Uni[]>(`universities?select=id,name,default_language&active=eq.true${only}`);
