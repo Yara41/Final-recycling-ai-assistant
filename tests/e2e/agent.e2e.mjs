@@ -8,7 +8,7 @@ after(async () => { await browser?.close(); server?.kill(); });
 
 async function openAgent(backend, opts) {
   const app = await openApp(browser, backend, opts);
-  await app.page.getByRole('button', { name: /ask the agent/i }).first().click();
+  await app.page.getByRole('button', { name: /talk to the agent/i }).first().click();
   return app;
 }
 
@@ -83,7 +83,7 @@ test('a photo is resized and sent as JPEG', async () => {
 test('the "agent is working" text stays on one line (Arabic, RTL)', async () => {
   const { page, context } = await openApp(browser, { profile: profile() }, { lang: 'ar' });
   await page.setViewportSize({ width: 1530, height: 800 });
-  await page.getByRole('button', { name: /اسأل الوكيل/ }).first().click();
+  await page.getByRole('button', { name: /تحدث مع الإيجنت/ }).first().click();
   await page.route('**/functions/v1/agent', async (route) => {
     await new Promise((r) => setTimeout(r, 1500));
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ reply: 'تمام', actions: [], conversationId: 'c1' }) });
