@@ -13,8 +13,15 @@ for any university.
 - **Database** (`supabase/migrations`): multi-university tenants, roles with invite codes, recorded
   recycling behaviour, bin reports, agent memory and an audit trail of agent actions, all behind
   Row Level Security. Points can only be written by the agent (service role), never by the browser.
-- **Website** (`src/agent`): onboarding, agent chat with action cards, photo and voice input,
-  My impact, facilities reports and the campus dashboard.
+- **Living Campus** (`src/campus`): each university is drawn as a 3D campus generated from its own
+  data (`campus_snapshot`): one building per faculty, trees that grow with verified points, litter where
+  sorting goes wrong, pins on reported bins, and Eco, the agent's character. Agent actions animate it
+  (items fly into their building, reports pin the bin) and "Your week" replays the last 7 days.
+  three.js is lazy-loaded; low-end or reduced-motion devices get an illustrated SVG version
+  (`?3d=1` / `?3d=0` force either).
+- **Website** (`src/pages`, `src/agent`): landing page with the live demo campus, onboarding, the agent
+  chat as a sheet over the campus (photo and voice input, action cards), My impact, facilities reports
+  and the campus dashboard.
 
 Setup, in Arabic, step by step and free: **[docs/AGENT_SETUP.md](docs/AGENT_SETUP.md)**.
 Design and plan: `docs/superpowers/specs/` and `docs/superpowers/plans/`.
