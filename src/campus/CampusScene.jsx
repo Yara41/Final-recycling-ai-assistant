@@ -104,6 +104,9 @@ function Pin({ x, z, warn, still }) {
 
 export default function CampusScene({ layout, growthByFaculty = {}, pins = [], ecoTarget, ecoText, still = false, onContextLost, onApi }) {
   const extent = extentOf(layout);
+  const [dark] = React.useState(() => {
+    try { return matchMedia('(prefers-color-scheme: dark)').matches; } catch { return false; }
+  });
   const pinBy = new Map(pins.map((p) => [p.locationId, p.kind]));
   const target = layout.buildings.find((b) => b.id === ecoTarget) ?? layout.buildings[0];
   const ecoAt = target ? [target.x + target.w / 2 + 0.9, target.h + 1.6, target.z + target.d / 2 + 0.9] : [0, 4, 0];
@@ -149,11 +152,11 @@ export default function CampusScene({ layout, growthByFaculty = {}, pins = [], e
         <Spin still={still}>
           <mesh position={[0, -0.25, 0]} receiveShadow>
             <cylinderGeometry args={[extent, extent * 1.02, 0.5, 72]} />
-            <meshLambertMaterial color="#bfe8cf" />
+            <meshLambertMaterial color={dark ? '#2c5a45' : '#bfe8cf'} />
           </mesh>
           <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[extent * 0.55, extent * 0.6, 72]} />
-            <meshBasicMaterial color="#e9f7ee" />
+            <meshBasicMaterial color={dark ? '#3d6e57' : '#e9f7ee'} />
           </mesh>
           {layout.buildings.map((b) => {
             const g = growthByFaculty[b.faculty] ?? {

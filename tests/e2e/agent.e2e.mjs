@@ -136,3 +136,57 @@ test('a report from the agent puts a warning pin on the campus', async () => {
   await page.locator('.campus-agent .pin.warn').waitFor();
   await context.close();
 });
+
+test('the chat sheet expands to show history and collapses back', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    agent: (body) => [200, { reply: `Reply to ${body.message}`, conversationId: 'c1', actions: [] }],
+  });
+  const toggle = page.getByRole('button', { name: /expand chat/i });
+  assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+  for (const m of ['one', 'two', 'three']) {
+    await page.getByPlaceholder(/message/i).fill(m);
+    await page.getByRole('button', { name: 'Send', exact: true }).click();
+    await page.getByText(`Reply to ${m}`).waitFor();
+  }
+  // collapsed: only the latest exchange is shown
+  assert.equal(await page.getByText('Reply to one').isVisible(), false);
+  await toggle.click();
+  const collapse = page.getByRole('button', { name: /collapse chat/i });
+  assert.equal(await collapse.getAttribute('aria-expanded'), 'true');
+  await page.getByText('Reply to one').waitFor();
+  await collapse.click();
+  await page.getByRole('button', { name: /expand chat/i }).waitFor();
+  await context.close();
+});
+
+test('the top bar shows my points and adds new ones', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    impact: { items: 12, est_kg: 0.3, est_co2e_kg: 0.4, points: 120, correct_pct: 90, streak_days: 2, verified_items: 12 },
+    agent: () => [200, { reply: 'Nice!', conversationId: 'c1', actions: [{ kind: 'logged', title: 'Logged', points: 10 }] }],
+  });
+  const chip = page.locator('.points-chip');
+  await chip.getByText('120').waitFor();
+  await page.getByPlaceholder(/message/i).fill('bottle');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await chip.getByText('130').waitFor();
+  await context.close();
+});
+
+test('on a 360px phone in Arabic the expanded chat never scrolls sideways', async () => {
+  const long = 'هذه رسالة طويلة جداً '.repeat(30) + 'https://example.com/' + 'a'.repeat(120);
+  const { page, context } = await openApp(browser, {
+    profile: profile(),
+    agent: () => [200, { reply: long, conversationId: 'c1', actions: [{ kind: 'logged', title: 'سجّلت 1 × عبوة بلاستيك طويلة الاسم جداً جداً', detail: long.slice(0, 200), points: 10 }] }],
+  }, { lang: 'ar' });
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.getByRole('button', { name: /تحدث مع الإيجنت/ }).first().click();
+  await page.getByPlaceholder(/رسالتك/).fill('رميت عبوة');
+  await page.getByRole('button', { name: 'إرسال', exact: true }).click();
+  await page.locator('.action-card').waitFor();
+  await page.getByRole('button', { name: /توسيع المحادثة/ }).click();
+  const width = await page.evaluate(() => document.documentElement.scrollWidth);
+  assert.ok(width <= 360, `page is ${width}px wide`);
+  await context.close();
+});

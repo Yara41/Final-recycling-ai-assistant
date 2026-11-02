@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowUp, Camera, History, Plus, X } from 'lucide-react';
+import { ArrowUp, Camera, ChevronUp, History, Plus, X } from 'lucide-react';
 import { sendAgentMessage } from '../lib/agent.js';
 import { listConversations, loadMessages } from '../lib/history.js';
 import { prepareImage } from '../lib/image.js';
@@ -25,8 +25,10 @@ export default function AgentChat({ profile, lang, dir, prompt = '', onNeedsOnbo
   const [input, setInput] = useState(prompt);
   const [busy, setBusy] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const fileRef = useRef(null);
   const boxRef = useRef(null);
+  const drag = useRef(null);
 
   useEffect(() => {
     listConversations().then(setChats).catch(() => setChats([]));
@@ -34,7 +36,24 @@ export default function AgentChat({ profile, lang, dir, prompt = '', onNeedsOnbo
 
   useEffect(() => {
     boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, busy]);
+  }, [messages, busy, expanded]);
+
+  // The handle opens/closes the sheet on tap, or by dragging it up or down.
+  const onHandleDown = (e) => { drag.current = { y: e.clientY, moved: false }; };
+  const onHandleUp = (e) => {
+    const d = drag.current;
+    if (!d) return;
+    const dy = e.clientY - d.y;
+    if (Math.abs(dy) > 30) {
+      d.moved = true;
+      setExpanded(dy < 0);
+    }
+  };
+  const onHandleClick = () => {
+    if (drag.current?.moved) { drag.current = null; return; }
+    drag.current = null;
+    setExpanded((x) => !x);
+  };
 
   const openChat = async (id) => {
     setShowHistory(false);
@@ -87,101 +106,112 @@ export default function AgentChat({ profile, lang, dir, prompt = '', onNeedsOnbo
   };
 
   const empty = messages.length === 0;
+  // Collapsed, the sheet shows only the latest exchange; expanded, the whole conversation.
+  const lastUser = messages.map((m) => m.role).lastIndexOf('user');
+  const shown = expanded || lastUser < 0 ? messages : messages.slice(lastUser);
 
   return (
     <>
       {showHistory && <div className="history-overlay" onClick={() => setShowHistory(false)} />}
-      <aside className={`chat-sidebar ${showHistory ? 'open' : ''}`} dir={dir}>
-        <div className="sidebar-top">
-          <div className="sidebar-logo"><img src="/logo.png" alt="EcoWasteAI" /></div>
-          <button type="button" className="chat-head-btn sidebar-close" onClick={() => setShowHistory(false)} aria-label="close"><X size={18} /></button>
+      <aside className={`chat-drawer ${showHistory ? 'open' : ''}`} dir={dir} aria-hidden={!showHistory}>
+        <div className="drawer-top">
+          <div className="agent-identity">
+            <strong>{profile.universities?.name}</strong>
+            <span>{s.roleLabel[profile.role]}{profile.faculty ? ` • ${profile.faculty}` : ''}</span>
+          </div>
+          <button type="button" className="icon-btn" onClick={() => setShowHistory(false)} aria-label={s.close}><X size={18} /></button>
         </div>
-        <div className="agent-identity">
-          <strong>{profile.universities?.name}</strong>
-          <span>{s.roleLabel[profile.role]}{profile.faculty ? ` • ${profile.faculty}` : ''}</span>
-        </div>
-        <button type="button" className="sidebar-new" onClick={newChat}><Plus size={17} /> {s.newChat}</button>
-        <div className="sidebar-title">{s.myChats}</div>
+        <button type="button" className="btn btn-lime drawer-new" onClick={newChat}><Plus size={17} /> {s.newChat}</button>
+        <div className="drawer-title">{s.myChats}</div>
         <div className="chat-history">
           {chats.length === 0 ? (
             <p className="chat-history-empty">{s.noChats}</p>
           ) : (
             chats.map((c) => (
-              <div key={c.id} className={`chat-history-item ${c.id === conversationId ? 'current' : ''}`}>
-                <button type="button" className="chat-history-open" onClick={() => openChat(c.id)}>
-                  <span className="chat-history-name">{c.title}</span>
-                  <span className="chat-history-date">
-                    {new Date(c.updated_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'ar', { day: 'numeric', month: 'short' })}
-                  </span>
-                </button>
-              </div>
+              <button key={c.id} type="button" className={`chat-history-item ${c.id === conversationId ? 'current' : ''}`} onClick={() => openChat(c.id)}>
+                <span className="chat-history-name">{c.title}</span>
+                <span className="chat-history-date">
+                  {new Date(c.updated_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'ar', { day: 'numeric', month: 'short' })}
+                </span>
+              </button>
             ))
           )}
         </div>
       </aside>
 
-      <section dir={dir} className={`assistant-main ${empty ? 'is-welcome' : ''}`}>
-        <div className="assistant-toolbar">
-          <button type="button" className="tool-btn only-mobile" onClick={() => setShowHistory(true)}><History size={16} /> {s.chats}</button>
-          <button type="button" className="tool-btn only-mobile" onClick={newChat}><Plus size={16} /> {s.newChat}</button>
+      <section dir={dir} className={`chat-sheet ${expanded ? 'expanded' : ''} ${empty ? 'is-welcome' : ''}`}>
+        <div className="sheet-head">
+          <button type="button" className="icon-btn" onClick={() => setShowHistory(true)} aria-label={s.chats}><History size={17} /></button>
+          <button
+            type="button"
+            className="sheet-handle"
+            aria-expanded={expanded}
+            aria-label={expanded ? s.collapseChat : s.expandChat}
+            onPointerDown={onHandleDown}
+            onPointerUp={onHandleUp}
+            onClick={onHandleClick}
+          >
+            <span className="grip" />
+            <ChevronUp size={16} className="sheet-chevron" />
+          </button>
+          <button type="button" className="icon-btn" onClick={newChat} aria-label={s.newChat}><Plus size={17} /></button>
         </div>
 
-        {empty ? (
-          <div className="assistant-welcome">
-            <span className="hero-small-title">{s.heroKicker}</span>
-            <h1>{s.heroTitle}</h1>
-            <p>{s.heroSub}</p>
-          </div>
-        ) : (
-          <div className="assistant-messages" ref={boxRef}>
-            {messages.map((m) => (
-              <div key={m.id} className={`chat-message ${m.role === 'user' ? 'chat-user' : 'chat-ai'}`}>
-                {m.role === 'ai' ? (
-                  <div className="agent-reply">
-                    {m.actions?.length > 0 && (
-                      <div className="action-list">
-                        {m.actions.map((card, i) => <ActionCard key={i} card={card} />)}
-                      </div>
-                    )}
-                    {m.text && (
-                      <div className="markdown-content">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="user-message-text">
-                    {m.image && <img src={m.image} alt="" className="chat-msg-image" />}
-                    {m.text}
-                  </div>
-                )}
+        <div className="sheet-body" ref={boxRef}>
+          {empty ? (
+            <div className="sheet-welcome">
+              <span className="kicker">{s.heroKicker}</span>
+              <h2>{s.heroTitle}</h2>
+              <p>{s.heroSub}</p>
+              <div className="suggested-questions">
+                {suggestionsFor(s, profile.role).map((q) => (
+                  <button key={q} type="button" onClick={() => send({ text: q })}>{q}</button>
+                ))}
+                <button type="button" onClick={() => fileRef.current?.click()}><Camera size={14} /> {s.photo}</button>
               </div>
-            ))}
-            {busy && (
-              <div className="chat-message chat-ai loading-message">
-                <span></span><span></span><span></span>
-                <span className="loading-text">{s.thinking}</span>
-              </div>
-            )}
-          </div>
-        )}
+            </div>
+          ) : (
+            <div className="chat-messages">
+              {shown.map((m) => (
+                <div key={m.id} className={`chat-message ${m.role === 'user' ? 'chat-user' : 'chat-ai'}`}>
+                  {m.role === 'ai' ? (
+                    <div className="agent-reply">
+                      {m.actions?.length > 0 && (
+                        <div className="action-list">
+                          {m.actions.map((card, i) => <ActionCard key={i} card={card} />)}
+                        </div>
+                      )}
+                      {m.text && (
+                        <div className="markdown-content">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="user-message-text">
+                      {m.image && <img src={m.image} alt="" className="chat-msg-image" />}
+                      {m.text}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {busy && (
+                <div className="chat-message chat-ai loading-message">
+                  <span className="dot" /><span className="dot" /><span className="dot" />
+                  <span className="loading-text">{s.thinking}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-        <form className="assistant-input" onSubmit={(e) => { e.preventDefault(); send({ text: input }); }}>
+        <form className="composer" onSubmit={(e) => { e.preventDefault(); send({ text: input }); }}>
           <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={s.placeholder} disabled={busy} maxLength={1000} />
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
           <VoiceButton lang={lang} label={s.voice} listeningLabel={s.listening} disabled={busy} onText={(t) => send({ text: t })} />
-          <button type="button" className="chat-camera-btn" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={s.photo}><Camera size={19} /></button>
-          <button type="submit" aria-label={s.send} disabled={busy || !input.trim()}><ArrowUp size={19} /></button>
+          <button type="button" className="composer-btn" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={s.photo}><Camera size={19} /></button>
+          <button type="submit" className="composer-send" aria-label={s.send} disabled={busy || !input.trim()}><ArrowUp size={19} /></button>
         </form>
-
-        {empty && (
-          <div className="suggested-questions">
-            {suggestionsFor(s, profile.role).map((q) => (
-              <button key={q} type="button" onClick={() => send({ text: q })}>{q}</button>
-            ))}
-            <button type="button" onClick={() => fileRef.current?.click()}><Camera size={14} /> {s.photo}</button>
-          </div>
-        )}
       </section>
     </>
   );
