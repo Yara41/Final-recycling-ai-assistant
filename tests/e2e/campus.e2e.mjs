@@ -33,3 +33,25 @@ test('navigation reaches the agent and learn pages', async () => {
   await page.getByRole('button', { name: 'EcoWaste Demo University' }).waitFor();
   await context.close();
 });
+
+test('the illustrated campus draws one building per faculty from the snapshot', async () => {
+  const { page, context } = await openApp(browser, {}, { lang: 'en' });
+  await page.locator('.campus-fallback .building').first().waitFor();
+  assert.equal(await page.locator('.campus-fallback .building').count(), 4); // Engineering, Business, Medicine, Campus
+  assert.ok(await page.locator('.campus-fallback .tree').count() > 0);
+  assert.equal(await page.locator('.campus-fallback .pin.warn').count(), 1);
+  await context.close();
+});
+
+test('a failed snapshot shows the offline chip', async () => {
+  const { page, context } = await openApp(browser, { snapshotError: true }, { lang: 'en' });
+  await page.getByText('Offline').waitFor();
+  await page.locator('.campus-fallback').first().waitFor();
+  await context.close();
+});
+
+test('a university with no buildings says so', async () => {
+  const { page, context } = await openApp(browser, { snapshot: { university: {}, locations: [], faculties: [], events_7d: [], open_reports: [] } }, { lang: 'en' });
+  await page.getByText('No buildings yet').waitFor();
+  await context.close();
+});

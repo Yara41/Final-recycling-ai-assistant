@@ -1,0 +1,45 @@
+/* Living Campus stage and illustrated fallback. */
+.campus-stage {
+  --campus-ground: #d9f0e2;
+  --campus-roof: #ffffff;
+  --campus-wall-l: #cfe5d9;
+  --campus-wall-r: #a9cdb9;
+  --campus-trunk: #7a5a3a;
+  --campus-leaf: #2fa36f;
+  --campus-litter: #b9925a;
+  --campus-kiosk-top: #c6f36b;
+  --campus-kiosk-l: #8fbf3f;
+  --campus-kiosk-r: #6f9d2a;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 20%, var(--sky), var(--paper));
+}
+.campus-agent { aspect-ratio: auto; height: 100%; border-radius: 0; }
+@media (prefers-color-scheme: dark) {
+  .campus-stage {
+    --campus-ground: #1b3328;
+    --campus-roof: #e3f4ea;
+    --campus-wall-l: #9fbfae;
+    --campus-wall-r: #6f9381;
+    --campus-leaf: #3fcf98;
+  }
+}
+.campus-fallback { position: absolute; inset: 0; display: grid; place-items: center; }
+.campus-fallback svg { width: 100%; height: 100%; }
+.campus-fallback .ground { fill: var(--campus-ground); }
+.campus-fallback.loading { background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, var(--card) 60%, transparent) 50%, transparent 70%) 0 0 / 200% 100%; animation: campus-shimmer 1.6s linear infinite; }
+.campus-fallback.empty p { color: var(--muted); font-family: var(--display); }
+.campus-fallback .pin path { fill: var(--leaf); }
+.campus-fallback .pin.warn path { fill: var(--amber); }
+.campus-fallback .pin { animation: campus-bob 2.4s ease-in-out infinite; transform-box: fill-box; }
+.campus-chip {
+  position: absolute; inset-block-start: 12px; inset-inline-start: 12px;
+  padding: 4px 12px; border-radius: var(--r-pill); font-size: 13px; font-family: var(--display);
+  background: var(--card); color: var(--muted); box-shadow: var(--shadow);
+}
+.campus-chip.offline::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); margin-inline-end: 6px; }
+@keyframes campus-shimmer { to { background-position: -200% 0; } }
+@keyframes campus-bob { 50% { translate: 0 -3px; } }

@@ -31,8 +31,28 @@ const json = (route, body, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
 // backend: { profile: object|null, agent: (body) => [status, json], stats, insights, reports, impact, board }
-export async function openApp(browser, backend, { speech = true, lang = 'en' } = {}) {
-  const context = await browser.newContext();
+export const SNAPSHOT = {
+  university: { id: UNI.id, name: UNI.name },
+  locations: [
+    { id: 'l1', name: 'Engineering cafeteria', kind: 'bin_station', faculty: 'Engineering', lat: 25.1012, lng: 55.1621 },
+    { id: 'l2', name: 'Business lobby', kind: 'bin_station', faculty: 'Business', lat: 25.1021, lng: 55.161 },
+    { id: 'l3', name: 'Medicine entrance', kind: 'bin_station', faculty: 'Medicine', lat: 25.103, lng: 55.1632 },
+    { id: 'l4', name: 'Battery drop-off', kind: 'drop_off', faculty: null, lat: null, lng: null },
+  ],
+  faculties: [
+    { faculty: 'Engineering', points_30d: 300, items_30d: 60, correct_rate_30d: 0.55, wrong_items_30d: 27 },
+    { faculty: 'Business', points_30d: 200, items_30d: 25, correct_rate_30d: 0.9, wrong_items_30d: 2 },
+    { faculty: 'Medicine', points_30d: 90, items_30d: 12, correct_rate_30d: 0.8, wrong_items_30d: 2 },
+  ],
+  events_7d: [
+    { created_at: '2026-11-01T10:00:00Z', location_id: 'l1', faculty: 'Engineering', category: 'plastic', correct_bin: true, verification: 'photo', quantity: 1 },
+    { created_at: '2026-10-29T10:00:00Z', location_id: 'l2', faculty: 'Business', category: 'general', correct_bin: false, verification: 'photo', quantity: 1 },
+  ],
+  open_reports: [{ location_id: 'l1', issue: 'contaminated', contamination_pct: 45 }],
+};
+
+export async function openApp(browser, backend, { speech = true, lang = 'en', reducedMotion = 'reduce' } = {}) {
+  const context = await browser.newContext({ reducedMotion });
   const page = await context.newPage();
   const state = { profile: backend.profile ?? null, agentCalls: [], rpc: [] };
   await page.addInitScript(({ speech, lang }) => {
@@ -56,6 +76,10 @@ export async function openApp(browser, backend, { speech = true, lang = 'en' } =
       if (fn === 'create_profile') { state.profile = profile(body.p_role); return json(route, state.profile); }
       if (fn === 'faculty_leaderboard') return json(route, backend.board ?? []);
       if (fn === 'university_stats') return json(route, backend.stats ?? { totals: {} });
+      if (fn === 'campus_snapshot') {
+        if (backend.snapshotError) return json(route, { message: 'boom' }, 500);
+        return json(route, backend.snapshot ?? SNAPSHOT);
+      }
       return json(route, {});
     }
     if (url.includes('/profiles')) return json(route, state.profile ? [state.profile] : []);
