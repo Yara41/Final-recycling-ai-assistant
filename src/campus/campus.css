@@ -71,3 +71,26 @@
 @media (prefers-reduced-motion: reduce) {
   .flight-points { animation: none !important; opacity: 1; }
 }
+
+.campus-fallback .pin.self path { fill: #9aa8a0; }
+
+/* "Your week" replay */
+.replay {
+  position: absolute; z-index: 5; inset-block-start: 12px; inset-inline: 12px; margin-inline: auto; max-width: 360px;
+  display: flex; flex-direction: column; gap: 8px; padding: 14px 16px;
+  background: var(--card); color: var(--ink); border-radius: var(--r-card); box-shadow: var(--shadow);
+}
+.replay-head { display: flex; align-items: center; gap: 8px; }
+.replay-head strong { flex: 1; font: 700 17px var(--display); }
+.replay-btn { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; }
+.replay-day { font: 600 15px var(--display); color: var(--leaf); }
+.replay-bar { height: 6px; border-radius: var(--r-pill); background: var(--sky); overflow: hidden; }
+.replay-bar > i { display: block; height: 100%; background: var(--leaf); }
+.replay-sub, .replay-empty { color: var(--muted); font-size: 13px; }
+.replay-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--muted); }
+.replay-legend span::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-inline-end: 5px; }
+.replay-legend .dot-good::before { background: #8fcf3a; }
+.replay-legend .dot-wrong::before { background: var(--amber); }
+.replay-legend .dot-self::before { background: #9aa8a0; }
+.replay-summary { display: flex; flex-direction: column; gap: 2px; }
+.replay-big { font: 800 28px/1.2 var(--display); }

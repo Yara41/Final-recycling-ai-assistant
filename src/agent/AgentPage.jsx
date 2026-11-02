@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Leaf } from 'lucide-react';
+import { Leaf, PlayCircle } from 'lucide-react';
 import { ensureSession, getProfile } from '../lib/session.js';
 import { getMyImpact } from '../lib/dashboard.js';
 import AdminPage from './AdminPage.jsx';
@@ -30,6 +30,8 @@ export default function AgentPage({ lang, dir, prompt = '' }) {
   const [chat, setChat] = useState({ key: 0, prompt });
   const [actions, setActions] = useState(null);
   const [points, setPoints] = useState(null);
+  const [replay, setReplay] = useState(false);
+  const endReplay = React.useCallback(() => setReplay(false), []);
 
   useEffect(() => {
     let alive = true;
@@ -92,6 +94,9 @@ export default function AgentPage({ lang, dir, prompt = '' }) {
             </button>
           ))}
         </nav>
+        <button type="button" className="week-btn" onClick={() => { setTab('chat'); setReplay(true); }}>
+          <PlayCircle size={16} aria-hidden="true" /> {s.yourWeek}
+        </button>
         <span className="points-chip" title={s.myPoints}>
           <Leaf size={15} aria-hidden="true" />
           <strong>{points ?? '–'}</strong>
@@ -99,8 +104,9 @@ export default function AgentPage({ lang, dir, prompt = '' }) {
         </span>
       </div>
       {tab === 'chat' ? (
-        <div className="agent-scene">
-          <Campus mode="agent" universityId={state.profile.university_id} lang={lang} actions={actions} profileFaculty={state.profile.faculty} />
+        <div className={`agent-scene ${replay ? 'replaying' : ''}`}>
+          <Campus mode="agent" universityId={state.profile.university_id} lang={lang} actions={actions}
+            profileFaculty={state.profile.faculty} replay={replay} onReplayEnd={endReplay} />
           <AgentChat key={chat.key} profile={state.profile} lang={lang} dir={dir} prompt={chat.prompt} onNeedsOnboarding={toOnboarding} onActions={onActions} />
         </div>
       ) : (

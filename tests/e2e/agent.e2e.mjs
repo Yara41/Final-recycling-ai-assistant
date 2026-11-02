@@ -190,3 +190,32 @@ test('on a 360px phone in Arabic the expanded chat never scrolls sideways', asyn
   assert.ok(width <= 360, `page is ${width}px wide`);
   await context.close();
 });
+
+test('"Your week" replays the last 7 days on the campus and sums them up', async () => {
+  const { page, context } = await openAgent({ profile: profile() });
+  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.clock.install();
+  await page.getByRole('button', { name: 'Your week' }).click();
+  const replay = page.getByRole('dialog', { name: 'Your week' });
+  await replay.waitFor();
+  await page.clock.runFor(1000);
+  await replay.locator('.replay-day').waitFor();
+  await page.clock.runFor(21000);
+  await replay.getByText('2 items').waitFor();
+  await replay.getByText('50% correctly sorted').waitFor();
+  await replay.getByRole('button', { name: 'Close' }).click();
+  await replay.waitFor({ state: 'detached' });
+  await page.getByPlaceholder(/message/i).waitFor();
+  await context.close();
+});
+
+test('"Your week" with no activity says so', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    snapshot: { university: {}, locations: [{ id: 'l1', name: 'A', kind: 'bin_station', faculty: 'Engineering', lat: null, lng: null }], faculties: [], events_7d: [], open_reports: [] },
+  });
+  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.getByRole('button', { name: 'Your week' }).click();
+  await page.getByText('No activity this week yet').waitFor();
+  await context.close();
+});

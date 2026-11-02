@@ -65,7 +65,7 @@ test('the 3D campus mounts a canvas when forced', async () => {
 
 test('losing the WebGL context swaps back to the illustrated campus', async () => {
   const { page, context } = await openApp(browser, {}, { lang: 'en', query: '?3d=1' });
-  const canvas = page.locator('.campus-stage canvas').first();
+  const canvas = page.locator('.campus-stage .scene-wrap[data-ready="true"] canvas').first();
   await canvas.waitFor({ timeout: 30000 });
   await canvas.evaluate((c) => c.dispatchEvent(new Event('webglcontextlost', { cancelable: true })));
   await page.locator('.campus-stage[data-renderer="svg"] .campus-fallback .building').first().waitFor();

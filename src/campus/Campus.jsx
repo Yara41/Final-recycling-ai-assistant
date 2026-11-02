@@ -1,6 +1,8 @@
 import React from 'react';
 import CampusFallback from './CampusFallback.jsx';
 import Flight from './Flight.jsx';
+import Replay from './Replay.jsx';
+import { replayFrames } from './replay.js';
 import { fetchSnapshot, pinsFromSnapshot } from './data.js';
 import { effectsForCards } from './effects.js';
 import { layoutCampus } from './layout.js';
@@ -49,7 +51,8 @@ const ECO_SAYS_MS = 6000;
 // The living campus: loads the university's snapshot and draws it in 3D when the device
 // can, otherwise as an illustration. mode "showcase" is the home hero, "agent" sits behind the chat.
 // actions = { id, cards } is the agent's latest batch of action cards; each batch plays once.
-export default function Campus({ mode = 'showcase', universityId, lang = 'ar', onSnapshot, actions, profileFaculty, children }) {
+// replay = true plays "Your week" over the campus; onReplayEnd closes it.
+export default function Campus({ mode = 'showcase', universityId, lang = 'ar', onSnapshot, actions, profileFaculty, replay = false, onReplayEnd, children }) {
   const t = TEXT[lang === 'en' ? 'en' : 'ar'];
   const stage = React.useRef(null);
   const project3D = React.useRef(null);
@@ -62,6 +65,7 @@ export default function Campus({ mode = 'showcase', universityId, lang = 'ar', o
   const [pinEdits, setPinEdits] = React.useState({});
   const [say, setSay] = React.useState(null);
   const [flights, setFlights] = React.useState([]);
+  const [replayPins, setReplayPins] = React.useState({});
   const played = React.useRef(new Set());
   const drop3D = React.useCallback(() => setUse3D(false), []);
   const onApi = React.useCallback((fn) => { project3D.current = fn; }, []);
@@ -126,14 +130,24 @@ export default function Campus({ mode = 'showcase', universityId, lang = 'ar', o
     return () => clearTimeout(timer);
   }, [actions, view, profileFaculty, roofOf]);
 
+  const frames = React.useMemo(() => replayFrames(state.snapshot?.events_7d ?? []), [state.snapshot]);
+  const onFrame = React.useCallback((f) => {
+    if (f.locationId) setReplayPins((p) => ({ ...p, [f.locationId]: f.kind === 'wrong' ? 'warn' : f.kind }));
+  }, []);
+  const closeReplay = React.useCallback(() => {
+    setReplayPins({});
+    onReplayEnd?.();
+  }, [onReplayEnd]);
+
   const pins = React.useMemo(() => {
+    if (replay) return Object.entries(replayPins).map(([locationId, kind]) => ({ locationId, kind }));
     const base = new Map((view?.pins ?? []).map((p) => [p.locationId, p]));
     for (const [loc, kind] of Object.entries(pinEdits)) {
       if (kind) base.set(loc, { locationId: loc, kind });
       else base.delete(loc);
     }
     return [...base.values()];
-  }, [view, pinEdits]);
+  }, [view, pinEdits, replay, replayPins]);
 
   // In the showcase Eco tours the buildings and reads out each faculty's month.
   React.useEffect(() => {
@@ -185,6 +199,9 @@ export default function Campus({ mode = 'showcase', universityId, lang = 'ar', o
       {flights.map((f) => (
         <Flight key={f.id} from={f.from} to={f.to} points={f.points} still={still} onDone={() => endFlight(f.id)} />
       ))}
+      {replay && view && (
+        <Replay frames={frames} events={state.snapshot?.events_7d ?? []} lang={lang} onFrame={onFrame} onClose={closeReplay} />
+      )}
       {state.error && <span className="campus-chip offline" role="status">{t.offline}</span>}
       {children}
     </div>

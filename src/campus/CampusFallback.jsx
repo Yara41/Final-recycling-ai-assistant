@@ -48,6 +48,7 @@ export default function CampusFallback({ layout, growthByFaculty = {}, pins = []
   const viewBox = `${Math.min(...xs) - pad} ${Math.min(...ys) - 70} ${Math.max(...xs) - Math.min(...xs) + pad * 2} ${Math.max(...ys) - Math.min(...ys) + 70 + pad}`;
   const warn = new Set(pins.filter((p) => p.kind === 'warn').map((p) => p.locationId));
   const good = new Set(pins.filter((p) => p.kind === 'good').map((p) => p.locationId));
+  const self = new Set(pins.filter((p) => p.kind === 'self').map((p) => p.locationId));
 
   const items = [];
   for (const b of layout.buildings) {
@@ -79,7 +80,7 @@ export default function CampusFallback({ layout, growthByFaculty = {}, pins = []
   }
   for (const k of layout.kiosks) {
     const [px, py] = iso(k.x, k.z, 1.2);
-    const pinKind = warn.has(k.locationId) ? 'warn' : good.has(k.locationId) ? 'good' : null;
+    const pinKind = warn.has(k.locationId) ? 'warn' : good.has(k.locationId) ? 'good' : self.has(k.locationId) ? 'self' : null;
     items.push({ key: k.id, depth: k.x + k.z, el: (
       <g className={`kiosk ${k.kind}`} data-location={k.locationId}>
         <Box x={k.x} z={k.z} w={k.w} d={k.d} h={1} top="var(--campus-kiosk-top)" left="var(--campus-kiosk-l)" right="var(--campus-kiosk-r)" />

@@ -89,7 +89,9 @@ function Tree({ x, z, s }) {
   );
 }
 
-function Pin({ x, z, warn, still }) {
+const PIN_COLORS = { warn: '#ffb547', good: '#c6f36b', self: '#b7c2bc' };
+
+function Pin({ x, z, kind, still }) {
   const ref = React.useRef();
   useFrame((state) => {
     if (!still && ref.current) ref.current.position.y = 1.9 + Math.sin(state.clock.elapsedTime * 2 + x) * 0.15;
@@ -97,7 +99,7 @@ function Pin({ x, z, warn, still }) {
   return (
     <mesh ref={ref} position={[x, 1.9, z]}>
       <sphereGeometry args={[0.32, 16, 12]} />
-      <meshBasicMaterial color={warn ? '#ffb547' : '#c6f36b'} />
+      <meshBasicMaterial color={PIN_COLORS[kind] ?? PIN_COLORS.good} />
     </mesh>
   );
 }
@@ -111,6 +113,7 @@ export default function CampusScene({ layout, growthByFaculty = {}, pins = [], e
   const target = layout.buildings.find((b) => b.id === ecoTarget) ?? layout.buildings[0];
   const ecoAt = target ? [target.x + target.w / 2 + 0.9, target.h + 1.6, target.z + target.d / 2 + 0.9] : [0, 4, 0];
 
+  const [ready, setReady] = React.useState(false);
   const onCreated = React.useCallback(
     ({ gl }) => {
       gl.domElement.addEventListener(
@@ -121,6 +124,7 @@ export default function CampusScene({ layout, growthByFaculty = {}, pins = [], e
         },
         { once: true },
       );
+      setReady(true);
     },
     [onContextLost],
   );
@@ -136,7 +140,7 @@ export default function CampusScene({ layout, growthByFaculty = {}, pins = [], e
   }, []);
 
   return (
-    <div className="scene-wrap">
+    <div className="scene-wrap" data-ready={ready ? 'true' : undefined}>
       <Canvas
         orthographic
         flat
@@ -185,7 +189,7 @@ export default function CampusScene({ layout, growthByFaculty = {}, pins = [], e
                 <boxGeometry args={[k.w, 1, k.d]} />
                 <meshLambertMaterial color={k.kind === 'drop_off' ? '#ffd27a' : '#c6f36b'} />
               </mesh>
-              {pinBy.has(k.locationId) && <Pin x={k.x} z={k.z} warn={pinBy.get(k.locationId) === 'warn'} still={still} />}
+              {pinBy.has(k.locationId) && <Pin x={k.x} z={k.z} kind={pinBy.get(k.locationId)} still={still} />}
             </group>
           ))}
           <Projector layout={layout} onApi={onApi} />
