@@ -55,3 +55,36 @@ test('a university with no buildings says so', async () => {
   await page.getByText('No buildings yet').waitFor();
   await context.close();
 });
+
+test('the 3D campus mounts a canvas when forced', async () => {
+  const { page, context } = await openApp(browser, {}, { lang: 'en', query: '?3d=1' });
+  await page.locator('.campus-stage canvas').first().waitFor({ timeout: 30000 });
+  await page.locator('.campus-stage[data-renderer="3d"]').first().waitFor();
+  await context.close();
+});
+
+test('losing the WebGL context swaps back to the illustrated campus', async () => {
+  const { page, context } = await openApp(browser, {}, { lang: 'en', query: '?3d=1' });
+  const canvas = page.locator('.campus-stage canvas').first();
+  await canvas.waitFor({ timeout: 30000 });
+  await canvas.evaluate((c) => c.dispatchEvent(new Event('webglcontextlost', { cancelable: true })));
+  await page.locator('.campus-stage[data-renderer="svg"] .campus-fallback .building').first().waitFor();
+  assert.equal(await page.locator('.campus-stage canvas').count(), 0);
+  await context.close();
+});
+
+test('three.js stays out of the first download', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const manifest = JSON.parse(await readFile(new URL('../../dist/.vite/manifest.json', import.meta.url), 'utf8'));
+  const entry = Object.values(manifest).find((c) => c.isEntry);
+  const initial = new Set();
+  const walk = (key) => {
+    if (initial.has(key)) return;
+    initial.add(key);
+    for (const k of manifest[key]?.imports ?? []) walk(k);
+  };
+  walk(Object.keys(manifest).find((k) => manifest[k] === entry));
+  const files = [...initial].map((k) => `${k} ${manifest[k].file}`).join('\n');
+  assert.doesNotMatch(files, /three|@react-three/i);
+  assert.ok(Object.keys(manifest).some((k) => /CampusScene/.test(k)), 'CampusScene is its own chunk');
+});

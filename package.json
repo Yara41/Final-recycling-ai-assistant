@@ -15,12 +15,14 @@
     "test:functions": "npx deno test --no-lock --no-config --allow-env --allow-read supabase/functions/tests/"
   },
   "dependencies": {
+    "@react-three/fiber": "9.8.1",
     "@supabase/supabase-js": "2.117.3",
     "lucide-react": "^0.577.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "three": "0.186.1"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.10",

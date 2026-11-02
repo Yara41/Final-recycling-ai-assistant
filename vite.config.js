@@ -85,5 +85,7 @@ export default defineConfig(({ command, mode }) => {
   checkPublicEnv(mode, command === 'build' && mode === 'production')
   return {
     plugins: [react(), tailwindcss()],
+    // The manifest lets a test prove three.js is not in the first download.
+    build: { manifest: true },
   }
 })

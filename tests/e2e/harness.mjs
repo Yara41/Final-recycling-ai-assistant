@@ -51,7 +51,7 @@ export const SNAPSHOT = {
   open_reports: [{ location_id: 'l1', issue: 'contaminated', contamination_pct: 45 }],
 };
 
-export async function openApp(browser, backend, { speech = true, lang = 'en', reducedMotion = 'reduce' } = {}) {
+export async function openApp(browser, backend, { speech = true, lang = 'en', reducedMotion = 'reduce', query = '' } = {}) {
   const context = await browser.newContext({ reducedMotion });
   const page = await context.newPage();
   const state = { profile: backend.profile ?? null, agentCalls: [], rpc: [] };
@@ -97,10 +97,10 @@ export async function openApp(browser, backend, { speech = true, lang = 'en', re
     const [status, payload] = backend.agent ? backend.agent(body, state) : [200, { reply: 'ok', actions: [], conversationId: 'c1' }];
     return json(route, payload, status);
   });
-  await page.goto(BASE);
+  await page.goto(BASE + query);
   return { page, state, context };
 }
 
 export async function launch() {
-  return chromium.launch();
+  return chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 }

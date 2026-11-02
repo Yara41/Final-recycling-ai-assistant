@@ -43,3 +43,13 @@
 .campus-chip.offline::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); margin-inline-end: 6px; }
 @keyframes campus-shimmer { to { background-position: -200% 0; } }
 @keyframes campus-bob { 50% { translate: 0 -3px; } }
+.campus-stage canvas { touch-action: pan-y; }
+.scene-wrap { position: absolute; inset: 0; }
+.eco-bubble {
+  position: absolute; top: 0; left: 0; pointer-events: none; will-change: transform;
+  width: max-content; max-width: min(78%, 300px); text-align: center;
+  padding: 6px 12px; border-radius: 14px; background: var(--card); color: var(--ink);
+  font: 600 13px/1.4 var(--display); box-shadow: var(--shadow);
+}
+.eco-bubble[hidden] { display: none; }
+@media (max-width: 520px) { .eco-bubble { font-size: 11.5px; padding: 4px 10px; } }
