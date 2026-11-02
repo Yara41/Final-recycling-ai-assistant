@@ -11,7 +11,7 @@ set local search_path = public, extensions;
 delete from auth.users where id::text like 'dddddddd-0000-4000-8000-%';
 delete from public.universities where id = '00000000-0000-4000-8000-000000000001';
 
-insert into public.universities (id, name, country, default_language, bins, sorting_rules, points_per_item)
+insert into public.universities (id, name, country, default_language, bins, sorting_rules, points_per_item, public_demo)
 values (
   '00000000-0000-4000-8000-000000000001',
   'EcoWaste Demo University', 'AE', 'en',
@@ -25,7 +25,8 @@ values (
   'Plastic: clean bottles and caps only; chips and sweet wrappers are general waste. '
   || 'Paper: clean and dry only; greasy pizza boxes, tissues and coffee cups are general waste. '
   || 'Metal: empty drink and food cans. Glass, batteries and e-waste go to the special drop-off points only.',
-  10
+  10,
+  true
 );
 
 insert into public.locations (id, university_id, name, kind, faculty, materials, lat, lng) values

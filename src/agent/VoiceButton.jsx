@@ -33,7 +33,7 @@ export default function VoiceButton({ lang, label, listeningLabel, onText, disab
   return (
     <button
       type="button"
-      className={`chat-camera-btn voice-btn ${listening ? 'is-listening' : ''}`}
+      className={`composer-btn voice-btn ${listening ? 'is-listening' : ''}`}
       onClick={toggle}
       disabled={disabled}
       aria-label={listening ? listeningLabel : label}

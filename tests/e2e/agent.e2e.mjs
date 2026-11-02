@@ -8,7 +8,7 @@ after(async () => { await browser?.close(); server?.kill(); });
 
 async function openAgent(backend, opts) {
   const app = await openApp(browser, backend, opts);
-  await app.page.getByRole('button', { name: /ask the agent/i }).first().click();
+  await app.page.getByRole('button', { name: /talk to the agent/i }).first().click();
   return app;
 }
 
@@ -83,7 +83,7 @@ test('a photo is resized and sent as JPEG', async () => {
 test('the "agent is working" text stays on one line (Arabic, RTL)', async () => {
   const { page, context } = await openApp(browser, { profile: profile() }, { lang: 'ar' });
   await page.setViewportSize({ width: 1530, height: 800 });
-  await page.getByRole('button', { name: /اسأل الوكيل/ }).first().click();
+  await page.getByRole('button', { name: /تحدث مع الإيجنت/ }).first().click();
   await page.route('**/functions/v1/agent', async (route) => {
     await new Promise((r) => setTimeout(r, 1500));
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ reply: 'تمام', actions: [], conversationId: 'c1' }) });
@@ -103,5 +103,119 @@ test('My impact shows how many items were verified by photo', async () => {
   await page.getByRole('tab', { name: 'My impact' }).click();
   await page.getByText(/verified by photo/i).waitFor();
   assert.equal(await page.locator('.stat-tile', { hasText: /verified by photo/i }).locator('strong').textContent(), '3');
+  await context.close();
+});
+
+test('logging an item flies it into the campus and shows +10', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    agent: () => [200, { reply: 'Nice!', conversationId: 'c1', actions: [
+      { kind: 'logged', title: 'Logged 1 × Plastic bottle', detail: 'Correctly sorted', points: 10, location_id: 'l1' },
+    ] }],
+  });
+  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.getByPlaceholder(/message/i).fill('bottle');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.locator('.campus-agent .flight').waitFor();
+  assert.equal(await page.locator('.campus-agent .flight .flight-points').textContent(), '+10');
+  await page.locator('.campus-agent .flight').waitFor({ state: 'detached', timeout: 5000 });
+  await context.close();
+});
+
+test('a report from the agent puts a warning pin on the campus', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    snapshot: { university: {}, locations: [{ id: 'l2', name: 'Lobby', kind: 'bin_station', faculty: 'Business', lat: null, lng: null }],
+      faculties: [], events_7d: [], open_reports: [] },
+    agent: () => [200, { reply: 'Reported.', conversationId: 'c1', actions: [{ kind: 'report', title: 'Report sent to facilities', location_id: 'l2' }] }],
+  });
+  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  assert.equal(await page.locator('.campus-agent .pin.warn').count(), 0);
+  await page.getByPlaceholder(/message/i).fill('the lobby bin is full');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.locator('.campus-agent .pin.warn').waitFor();
+  await context.close();
+});
+
+test('the chat sheet expands to show history and collapses back', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    agent: (body) => [200, { reply: `Reply to ${body.message}`, conversationId: 'c1', actions: [] }],
+  });
+  const toggle = page.getByRole('button', { name: /expand chat/i });
+  assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+  for (const m of ['one', 'two', 'three']) {
+    await page.getByPlaceholder(/message/i).fill(m);
+    await page.getByRole('button', { name: 'Send', exact: true }).click();
+    await page.getByText(`Reply to ${m}`).waitFor();
+  }
+  // collapsed: only the latest exchange is shown
+  assert.equal(await page.getByText('Reply to one').isVisible(), false);
+  await toggle.click();
+  const collapse = page.getByRole('button', { name: /collapse chat/i });
+  assert.equal(await collapse.getAttribute('aria-expanded'), 'true');
+  await page.getByText('Reply to one').waitFor();
+  await collapse.click();
+  await page.getByRole('button', { name: /expand chat/i }).waitFor();
+  await context.close();
+});
+
+test('the top bar shows my points and adds new ones', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    impact: { items: 12, est_kg: 0.3, est_co2e_kg: 0.4, points: 120, correct_pct: 90, streak_days: 2, verified_items: 12 },
+    agent: () => [200, { reply: 'Nice!', conversationId: 'c1', actions: [{ kind: 'logged', title: 'Logged', points: 10 }] }],
+  });
+  const chip = page.locator('.points-chip');
+  await chip.getByText('120').waitFor();
+  await page.getByPlaceholder(/message/i).fill('bottle');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await chip.getByText('130').waitFor();
+  await context.close();
+});
+
+test('on a 360px phone in Arabic the expanded chat never scrolls sideways', async () => {
+  const long = 'هذه رسالة طويلة جداً '.repeat(30) + 'https://example.com/' + 'a'.repeat(120);
+  const { page, context } = await openApp(browser, {
+    profile: profile(),
+    agent: () => [200, { reply: long, conversationId: 'c1', actions: [{ kind: 'logged', title: 'سجّلت 1 × عبوة بلاستيك طويلة الاسم جداً جداً', detail: long.slice(0, 200), points: 10 }] }],
+  }, { lang: 'ar' });
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.getByRole('button', { name: /تحدث مع الإيجنت/ }).first().click();
+  await page.getByPlaceholder(/رسالتك/).fill('رميت عبوة');
+  await page.getByRole('button', { name: 'إرسال', exact: true }).click();
+  await page.locator('.action-card').waitFor();
+  await page.getByRole('button', { name: /توسيع المحادثة/ }).click();
+  const width = await page.evaluate(() => document.documentElement.scrollWidth);
+  assert.ok(width <= 360, `page is ${width}px wide`);
+  await context.close();
+});
+
+test('"Your week" replays the last 7 days on the campus and sums them up', async () => {
+  const { page, context } = await openAgent({ profile: profile() });
+  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.clock.install();
+  await page.getByRole('button', { name: 'Your week' }).click();
+  const replay = page.getByRole('dialog', { name: 'Your week' });
+  await replay.waitFor();
+  await page.clock.runFor(1000);
+  await replay.locator('.replay-day').waitFor();
+  await page.clock.runFor(21000);
+  await replay.getByText('2 items').waitFor();
+  await replay.getByText('50% correctly sorted').waitFor();
+  await replay.getByRole('button', { name: 'Close' }).click();
+  await replay.waitFor({ state: 'detached' });
+  await page.getByPlaceholder(/message/i).waitFor();
+  await context.close();
+});
+
+test('"Your week" with no activity says so', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    snapshot: { university: {}, locations: [{ id: 'l1', name: 'A', kind: 'bin_station', faculty: 'Engineering', lat: null, lng: null }], faculties: [], events_7d: [], open_reports: [] },
+  });
+  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.getByRole('button', { name: 'Your week' }).click();
+  await page.getByText('No activity this week yet').waitFor();
   await context.close();
 });

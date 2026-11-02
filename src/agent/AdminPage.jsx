@@ -26,9 +26,9 @@ export default function AdminPage({ profile, lang, onAsk }) {
   return (
     <div className="dash">
       <h1>{s.campusTitle} — {profile.universities?.name}</h1>
-      <div className="agent-tabs" style={{ padding: 0, border: 0, background: 'none' }}>
+      <div className="seg seg-small">
         {[7, 30].map((d) => (
-          <button key={d} type="button" className={`agent-tab ${days === d ? 'active' : ''}`} onClick={() => setDays(d)}>
+          <button key={d} type="button" className={days === d ? 'active' : ''} aria-pressed={days === d} onClick={() => setDays(d)}>
             {d === 7 ? s.last7 : s.last30}
           </button>
         ))}
@@ -62,7 +62,7 @@ export default function AdminPage({ profile, lang, onAsk }) {
           </ul>
         </div>
       )}
-      <button type="button" className="onboarding-primary" onClick={() => onAsk(s.askCampusPrompt)}>{s.askAboutCampus}</button>
+      <button type="button" className="btn btn-primary dash-ask" onClick={() => onAsk(s.askCampusPrompt)}>{s.askAboutCampus}</button>
     </div>
   );
 }

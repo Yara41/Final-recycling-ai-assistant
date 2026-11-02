@@ -71,3 +71,13 @@ test('facilities sees open reports of own university only', async () => {
   assert.ok(seen.length >= 1);
   assert.ok(seen.every((r) => r.university_id === DEMO_UNI));
 });
+
+test('a signed-in user without a profile cannot read university stats', async () => {
+  const db = await freshDb();
+  const NOPROFILE = '10000000-0000-4000-8000-0000000000ff';
+  await addUser(db, NOPROFILE);
+  await assert.rejects(
+    asUser(db, NOPROFILE, (tx) => tx.query("select university_stats($1, now() - interval '30 days', now())", [DEMO_UNI])),
+    /insufficient_privilege/,
+  );
+});

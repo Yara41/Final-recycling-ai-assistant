@@ -92,6 +92,7 @@ Deno.test("log_recycling returns a logged card with points from the database", a
   assert.equal(r.ok, true);
   assert.equal(r.card?.kind, "logged");
   assert.equal(r.card?.points, 20);
+  assert.equal(r.card?.location_id, LOC); // the campus animates this bin's building
   assert.match(calls[0].url, /rpc\/log_recycling_event$/);
   assert.deepEqual(calls[0].body, {
     p_user: "u1", p_item: "Bottle", p_category: "plastic", p_bin: "plastic", p_quantity: 2, p_location: LOC, p_source: "chat",
@@ -174,9 +175,10 @@ Deno.test("card text follows lang", async () => {
 
 Deno.test("resolve_report passes the verified user id", async () => {
   setEnv();
-  mockFetch(() => ok({ report_id: "r1", status: "resolved" }));
+  mockFetch(() => ok({ report_id: "r1", status: "resolved", location_id: LOC }));
   const r = await runTool("resolve_report", { report_id: LOC, note: "emptied" }, ctx({ role: "facilities" }));
   assert.equal(r.ok, true);
+  assert.equal(r.card?.location_id, LOC);
   assert.equal(calls[0].body.p_user, "u1");
   globalThis.fetch = realFetch;
 });
