@@ -51,6 +51,7 @@ export const reportBinIssue: Tool = {
             ? t(ctx, "البلاغ موجود أصلاً عند فريق المرافق", "Already reported to facilities")
             : t(ctx, "أرسلت بلاغاً لفريق المرافق", "Report sent to facilities"),
           detail: issue,
+          location_id: String(args.location_id),
         },
       };
     }),
@@ -131,6 +132,7 @@ List the visible items, mark belongs=false for items that do not belong in this 
           kind: "audit",
           title: t(ctx, `فحص الحاوية: ${pct}% مفروز غلط`, `Bin audit: ${pct}% wrong items`),
           detail: summary + reported,
+          location_id: report && location ? String(location) : null,
           data: { contamination_pct: pct, items },
         },
       };
@@ -177,7 +179,7 @@ export const resolveReport: Tool = {
   run: (args, ctx) =>
     guarded(async () => {
       if (!isUuid(args.report_id)) return fail("report_not_found");
-      const r = await serviceRpc("resolve_bin_report", { p_user: ctx.userId, p_report: args.report_id, p_note: str(args.note, 500) || null });
-      return { ok: true, data: r, card: { kind: "resolved", title: t(ctx, "تم إغلاق البلاغ ✔", "Report resolved ✔") } };
+      const r = await serviceRpc<{ location_id?: string | null }>("resolve_bin_report", { p_user: ctx.userId, p_report: args.report_id, p_note: str(args.note, 500) || null });
+      return { ok: true, data: r, card: { kind: "resolved", title: t(ctx, "تم إغلاق البلاغ ✔", "Report resolved ✔"), location_id: r?.location_id ?? null } };
     }),
 };

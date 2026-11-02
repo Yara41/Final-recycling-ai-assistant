@@ -85,6 +85,7 @@ test('resolve_bin_report needs facilities or admin of the same university', asyn
   await asUser(db, B, (tx) => tx.query("select redeem_invite('DEMO-FACILITIES')"));
   const done = await asService(db, (tx) => one(tx, "select resolve_bin_report($1,$2,'emptied') r", [B, rep.r.report_id]));
   assert.equal(done.r.status, 'resolved');
+  assert.equal(done.r.location_id, LOC_ENG); // the campus removes this bin's pin
 });
 
 test('save_agent_turn stores messages and actions and reuses only own conversation', async () => {

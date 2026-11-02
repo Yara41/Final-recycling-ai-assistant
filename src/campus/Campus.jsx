@@ -1,6 +1,8 @@
 import React from 'react';
 import CampusFallback from './CampusFallback.jsx';
+import Flight from './Flight.jsx';
 import { fetchSnapshot, pinsFromSnapshot } from './data.js';
+import { effectsForCards } from './effects.js';
 import { layoutCampus } from './layout.js';
 import { growthFor } from './growth.js';
 import { detectDevice, shouldUse3D } from './gate.js';
@@ -42,17 +44,27 @@ class SceneBoundary extends React.Component {
   render() { return this.state.failed ? null : this.props.children; }
 }
 
+const ECO_SAYS_MS = 6000;
+
 // The living campus: loads the university's snapshot and draws it in 3D when the device
 // can, otherwise as an illustration. mode "showcase" is the home hero, "agent" sits behind the chat.
-export default function Campus({ mode = 'showcase', universityId, lang = 'ar', onSnapshot, ecoText, ecoTarget, children }) {
+// actions = { id, cards } is the agent's latest batch of action cards; each batch plays once.
+export default function Campus({ mode = 'showcase', universityId, lang = 'ar', onSnapshot, actions, profileFaculty, children }) {
   const t = TEXT[lang === 'en' ? 'en' : 'ar'];
+  const stage = React.useRef(null);
+  const project3D = React.useRef(null);
   const [state, setState] = React.useState({ snapshot: null, error: false });
   const [use3D, setUse3D] = React.useState(want3D);
   const [still] = React.useState(() => {
     try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
   });
   const [tour, setTour] = React.useState(0);
+  const [pinEdits, setPinEdits] = React.useState({});
+  const [say, setSay] = React.useState(null);
+  const [flights, setFlights] = React.useState([]);
+  const played = React.useRef(new Set());
   const drop3D = React.useCallback(() => setUse3D(false), []);
+  const onApi = React.useCallback((fn) => { project3D.current = fn; }, []);
 
   React.useEffect(() => {
     if (!universityId) return undefined;
@@ -76,47 +88,103 @@ export default function Campus({ mode = 'showcase', universityId, lang = 'ar', o
     return { layout: layoutCampus(state.snapshot), growth, pins: pinsFromSnapshot(state.snapshot), faculties };
   }, [state]);
 
-  const buildings = view?.layout.buildings ?? [];
+  const buildings = React.useMemo(() => view?.layout.buildings ?? [], [view]);
   const show3D = use3D && buildings.length > 0;
+
+  // Where a building's roof is on screen, in stage pixels.
+  const roofOf = React.useCallback((buildingId) => {
+    const box = stage.current?.getBoundingClientRect();
+    if (!box) return null;
+    if (project3D.current) return project3D.current(buildingId);
+    const b = buildings.find((x) => x.id === buildingId);
+    const el = b && stage.current.querySelector(`.campus-fallback .building[data-faculty="${CSS.escape(b.faculty)}"]`);
+    if (!el) return { x: box.width / 2, y: box.height / 2 };
+    const r = el.getBoundingClientRect();
+    return { x: r.left - box.left + r.width / 2, y: r.top - box.top };
+  }, [buildings]);
+
+  // Play each new batch of agent actions once.
+  React.useEffect(() => {
+    if (!actions?.id || !view || played.current.has(actions.id)) return undefined;
+    played.current.add(actions.id);
+    const fx = effectsForCards(actions.cards, { layout: view.layout, profileFaculty });
+    const box = stage.current?.getBoundingClientRect();
+    const from = box ? { x: box.width / 2, y: box.height - 12 } : { x: 0, y: 0 };
+    let timer = null;
+    for (const e of fx) {
+      if (e.type === 'pin' && e.locationId) setPinEdits((p) => ({ ...p, [e.locationId]: 'warn' }));
+      if (e.type === 'unpin' && e.locationId) setPinEdits((p) => ({ ...p, [e.locationId]: null }));
+      if (e.type === 'eco') {
+        setSay({ target: e.buildingId, text: e.text });
+        timer = setTimeout(() => setSay(null), ECO_SAYS_MS);
+      }
+      if (e.type === 'flight') {
+        const to = roofOf(e.buildingId) ?? from;
+        setFlights((f) => [...f, { id: `${actions.id}-${f.length}`, from, to, points: e.points }]);
+      }
+    }
+    return () => clearTimeout(timer);
+  }, [actions, view, profileFaculty, roofOf]);
+
+  const pins = React.useMemo(() => {
+    const base = new Map((view?.pins ?? []).map((p) => [p.locationId, p]));
+    for (const [loc, kind] of Object.entries(pinEdits)) {
+      if (kind) base.set(loc, { locationId: loc, kind });
+      else base.delete(loc);
+    }
+    return [...base.values()];
+  }, [view, pinEdits]);
 
   // In the showcase Eco tours the buildings and reads out each faculty's month.
   React.useEffect(() => {
-    if (!show3D || mode !== 'showcase' || ecoTarget || buildings.length < 2) return undefined;
+    if (!show3D || mode !== 'showcase' || buildings.length < 2) return undefined;
     const id = setInterval(() => setTour((i) => i + 1), 4500);
     return () => clearInterval(id);
-  }, [show3D, mode, ecoTarget, buildings.length]);
+  }, [show3D, mode, buildings.length]);
 
-  let target = ecoTarget;
-  let text = ecoText;
-  const touring = buildings.filter((b) => view?.faculties.some((x) => x.faculty === b.faculty));
-  if (show3D && !target && touring.length) {
-    const b = touring[tour % touring.length];
-    const f = view.faculties.find((x) => x.faculty === b.faculty);
-    target = b.id;
-    if (!text) text = view.growth[b.faculty].litter > 0 ? t.wrong(b.faculty, f.wrong_items_30d) : t.points(b.faculty, f.points_30d);
+  let target = say?.target;
+  let text = say?.text;
+  if (!target && view) {
+    if (mode === 'showcase') {
+      const touring = buildings.filter((b) => view.faculties.some((x) => x.faculty === b.faculty));
+      if (touring.length) {
+        const b = touring[tour % touring.length];
+        const f = view.faculties.find((x) => x.faculty === b.faculty);
+        target = b.id;
+        text = view.growth[b.faculty].litter > 0 ? t.wrong(b.faculty, f.wrong_items_30d) : t.points(b.faculty, f.points_30d);
+      }
+    } else {
+      target = buildings.find((b) => b.faculty === profileFaculty)?.id;
+    }
   }
 
+  const endFlight = React.useCallback((id) => setFlights((f) => f.filter((x) => x.id !== id)), []);
+
   const fallback = (
-    <CampusFallback layout={view?.layout ?? null} growthByFaculty={view?.growth} pins={view?.pins} emptyText={state.error ? '' : t.empty} />
+    <CampusFallback layout={view?.layout ?? null} growthByFaculty={view?.growth} pins={pins} emptyText={state.error ? '' : t.empty} />
   );
 
   return (
-    <div className={`campus-stage campus-${mode}`} data-renderer={show3D ? '3d' : 'svg'}>
+    <div ref={stage} className={`campus-stage campus-${mode}`} data-renderer={show3D ? '3d' : 'svg'}>
       {show3D ? (
         <SceneBoundary onFail={drop3D}>
           <React.Suspense fallback={fallback}>
             <CampusScene
               layout={view.layout}
               growthByFaculty={view.growth}
-              pins={view.pins}
+              pins={pins}
               ecoTarget={target}
               ecoText={text}
               still={still}
               onContextLost={drop3D}
+              onApi={onApi}
             />
           </React.Suspense>
         </SceneBoundary>
       ) : fallback}
+      {flights.map((f) => (
+        <Flight key={f.id} from={f.from} to={f.to} points={f.points} still={still} onDone={() => endFlight(f.id)} />
+      ))}
       {state.error && <span className="campus-chip offline" role="status">{t.offline}</span>}
       {children}
     </div>

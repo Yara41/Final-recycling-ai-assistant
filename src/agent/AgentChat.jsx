@@ -17,7 +17,7 @@ function suggestionsFor(s, role) {
 
 // Chat with the agent: text, photo or voice in; reply plus action cards out.
 // History lives on the server, so it follows the user's session.
-export default function AgentChat({ profile, lang, dir, prompt = '', onNeedsOnboarding }) {
+export default function AgentChat({ profile, lang, dir, prompt = '', onNeedsOnboarding, onActions }) {
   const s = strings(lang);
   const [chats, setChats] = useState([]);
   const [conversationId, setConversationId] = useState(null);
@@ -58,6 +58,7 @@ export default function AgentChat({ profile, lang, dir, prompt = '', onNeedsOnbo
     try {
       const res = await sendAgentMessage({ message: text.trim(), image, conversationId, lang });
       setMessages((m) => [...m, { id: `a${Date.now()}`, role: 'ai', text: res.reply, actions: res.actions }]);
+      if (res.actions?.length) onActions?.(res.actions);
       if (res.conversationId && res.conversationId !== conversationId) {
         setConversationId(res.conversationId);
         listConversations().then(setChats).catch(() => {});

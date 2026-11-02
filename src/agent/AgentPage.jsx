@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ensureSession, getProfile } from '../lib/session.js';
 import AdminPage from './AdminPage.jsx';
 import AgentChat from './AgentChat.jsx';
+import Campus from '../campus/Campus.jsx';
 import FacilitiesPage from './FacilitiesPage.jsx';
 import ImpactPage from './ImpactPage.jsx';
 import Onboarding from './Onboarding.jsx';
@@ -25,6 +26,8 @@ export default function AgentPage({ lang, dir, prompt = '' }) {
   const [state, setState] = useState({ status: 'loading', profile: null });
   const [tab, setTab] = useState('chat');
   const [chat, setChat] = useState({ key: 0, prompt });
+  const [actions, setActions] = useState(null);
+  const onActions = React.useCallback((cards) => setActions((a) => ({ id: (a?.id ?? 0) + 1, cards })), []);
 
   useEffect(() => {
     let alive = true;
@@ -73,8 +76,11 @@ export default function AgentPage({ lang, dir, prompt = '' }) {
         ))}
       </nav>
       {tab === 'chat' && (
-        <div className="agent-body">
-          <AgentChat key={chat.key} profile={state.profile} lang={lang} dir={dir} prompt={chat.prompt} onNeedsOnboarding={toOnboarding} />
+        <div className="agent-stack">
+          <Campus mode="agent" universityId={state.profile.university_id} lang={lang} actions={actions} profileFaculty={state.profile.faculty} />
+          <div className="agent-body">
+            <AgentChat key={chat.key} profile={state.profile} lang={lang} dir={dir} prompt={chat.prompt} onNeedsOnboarding={toOnboarding} onActions={onActions} />
+          </div>
         </div>
       )}
       {tab === 'impact' && <ImpactPage profile={state.profile} lang={lang} />}

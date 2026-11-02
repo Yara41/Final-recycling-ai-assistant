@@ -12,6 +12,7 @@ const read = (p) => readFile(new URL(p, root), 'utf8');
 export const MIGRATION = 'supabase/migrations/20261031120000_campus_agent.sql';
 export const VERIFIED = 'supabase/migrations/20261101120000_verified_points.sql';
 export const SNAPSHOT = 'supabase/migrations/20261102120000_campus_snapshot.sql';
+export const RESOLVE_LOC = 'supabase/migrations/20261102130000_resolve_returns_location.sql';
 export const SEED = 'supabase/seed/demo_university.sql';
 export const DEMO_UNI = '00000000-0000-4000-8000-000000000001';
 
@@ -47,6 +48,7 @@ export async function freshDb({ seed = true } = {}) {
   await db.exec(await read(MIGRATION));
   await db.exec(await read(VERIFIED));
   await db.exec(await read(SNAPSHOT));
+  await db.exec(await read(RESOLVE_LOC));
   if (seed) await db.exec(await read(SEED));
   return db;
 }

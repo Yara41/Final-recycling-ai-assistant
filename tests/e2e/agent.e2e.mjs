@@ -105,3 +105,34 @@ test('My impact shows how many items were verified by photo', async () => {
   assert.equal(await page.locator('.stat-tile', { hasText: /verified by photo/i }).locator('strong').textContent(), '3');
   await context.close();
 });
+
+test('logging an item flies it into the campus and shows +10', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    agent: () => [200, { reply: 'Nice!', conversationId: 'c1', actions: [
+      { kind: 'logged', title: 'Logged 1 × Plastic bottle', detail: 'Correctly sorted', points: 10, location_id: 'l1' },
+    ] }],
+  });
+  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.getByPlaceholder(/message/i).fill('bottle');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.locator('.campus-agent .flight').waitFor();
+  assert.equal(await page.locator('.campus-agent .flight .flight-points').textContent(), '+10');
+  await page.locator('.campus-agent .flight').waitFor({ state: 'detached', timeout: 5000 });
+  await context.close();
+});
+
+test('a report from the agent puts a warning pin on the campus', async () => {
+  const { page, context } = await openAgent({
+    profile: profile(),
+    snapshot: { university: {}, locations: [{ id: 'l2', name: 'Lobby', kind: 'bin_station', faculty: 'Business', lat: null, lng: null }],
+      faculties: [], events_7d: [], open_reports: [] },
+    agent: () => [200, { reply: 'Reported.', conversationId: 'c1', actions: [{ kind: 'report', title: 'Report sent to facilities', location_id: 'l2' }] }],
+  });
+  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  assert.equal(await page.locator('.campus-agent .pin.warn').count(), 0);
+  await page.getByPlaceholder(/message/i).fill('the lobby bin is full');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.locator('.campus-agent .pin.warn').waitFor();
+  await context.close();
+});
