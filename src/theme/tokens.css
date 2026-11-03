@@ -1,19 +1,18 @@
-/* EcoWasteAI "Living Campus" identity.
-   Deep campus green, a single lime highlight for points and actions, amber for reports. */
+/* EcoWasteAI identity: sky blue and limestone by day, navy by night; lime for points and actions, amber for reports. */
 :root {
-  --ink: #0b3b2c;
-  --leaf: #127a5c;
+  --ink: #13284a;
+  --leaf: #0f6b4a;
   --lime: #c6f36b;
-  --sky: #dff3ea;
-  --paper: #f7fbf8;
+  --sky: #e4f5fb;
+  --paper: #f4f9fb;
   --card: #ffffff;
   --amber: #ffb547;
-  --muted: #5a6b62;
-  --line: #d6e6dd;
+  --muted: #4b5d74;
+  --line: #d7e3ec;
   --on-ink: #f7fbf8;
-  --shadow: 0 18px 40px -24px rgba(11, 59, 44, 0.45);
+  --shadow: 0 18px 40px -24px rgba(19, 40, 74, 0.45);
 
-  --display: "Alexandria", "Segoe UI", Tahoma, sans-serif;
+  --display: "El Messiri", "Amiri", "Segoe UI", Tahoma, serif;
   --body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
 
   --r-card: 20px;
@@ -29,21 +28,20 @@
   --navy: var(--ink);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #e3f4ea;
-    --leaf: #3fcf98;
-    --lime: #c6f36b;
-    --sky: #0c1a14;
-    --paper: #101f18;
-    --card: #15281f;
-    --amber: #ffc56b;
-    --muted: #9db1a6;
-    --line: #24392f;
-    --on-ink: #0b1a13;
-    --shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.7);
-    color-scheme: dark;
-  }
+/* The theme follows the scene's time of day (set by SkyProvider), not the OS. */
+:root.dark {
+  --ink: #f4f1ea;
+  --leaf: #c6f36b;
+  --lime: #c6f36b;
+  --sky: #0b1428;
+  --paper: #0e1730;
+  --card: #15203d;
+  --amber: #ffc56b;
+  --muted: #c3cede;
+  --line: #26324f;
+  --on-ink: #0b1428;
+  --shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }

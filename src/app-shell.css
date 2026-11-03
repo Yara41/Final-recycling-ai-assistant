@@ -18,3 +18,5 @@
   .topbar nav button { padding: 6px 10px; font-size: 13px; }
 }
 .agent-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.clock-btn { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: var(--r-pill); padding: 6px 10px; cursor: pointer; font: 600 13px var(--body); }
+@media (max-width: 520px) { .clock-btn .clock-text { display: none; } }

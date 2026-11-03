@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AgentPage from './agent/AgentPage.jsx';
 import Home from './pages/Home.jsx';
 import Learn from './pages/Learn.jsx';
+import ClockButton from './campus/ClockButton.jsx';
 import { copy } from './pages/copy.js';
 import './app-shell.css';
 
@@ -47,6 +48,7 @@ export default function App() {
             </button>
           ))}
         </nav>
+        <ClockButton lang={lang} />
         <button type="button" className="lang" onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>{c.langSwitch}</button>
       </header>
 
