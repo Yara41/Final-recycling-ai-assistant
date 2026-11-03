@@ -71,6 +71,7 @@ export const logRecycling: Tool = {
             ? t(ctx, `فرز صحيح ✔ وصلت للحد اليومي للنقاط`, `Correctly sorted ✔ daily points limit reached`)
             : t(ctx, `فرز صحيح ✔ موثّق بصورة • وفّرت تقريباً ${Number(r.est_co2e_kg).toFixed(2)} كغ CO₂e (تقديري)`, `Correctly sorted ✔ photo-verified • about ${Number(r.est_co2e_kg).toFixed(2)} kg CO₂e saved (estimate)`),
           points: r.points,
+          bin,
           location_id: location === null ? null : String(location),
         },
       };

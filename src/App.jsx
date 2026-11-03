@@ -20,7 +20,7 @@ function readLang() {
 export default function App() {
   const [lang, setLang] = useState(readLang);
   const [page, setPage] = useState('home');
-  const [agentPrompt, setAgentPrompt] = useState('');
+  const [agentPrompt] = useState('');
   const dir = lang === 'en' ? 'ltr' : 'rtl';
   const c = copy(lang);
 
@@ -52,8 +52,8 @@ export default function App() {
         <button type="button" className="lang" onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>{c.langSwitch}</button>
       </header>
 
-      {page === 'home' && <Home lang={lang} onStart={() => go('agent')} />}
-      {page === 'learn' && <Learn lang={lang} onAsk={() => { setAgentPrompt(''); go('agent'); }} />}
+      {page === 'home' && <Home lang={lang} onStart={() => go('agent')} onPlay={() => go('learn')} />}
+      {page === 'learn' && <Learn lang={lang} />}
       {page === 'agent' && (
         <main className="agent-main">
           <AgentPage lang={lang} dir={dir} prompt={agentPrompt} />

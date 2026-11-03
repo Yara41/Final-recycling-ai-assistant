@@ -146,3 +146,7 @@ Deno.test("at most MAX_TOOL_CALLS tools run per message; extra calls are refused
   assert.equal(responses.length, 10);
   assert.equal(responses[9].functionResponse?.response.error, "too_many_actions");
 });
+
+Deno.test("the prompt keeps Arabic replies in Modern Standard Arabic", () => {
+  assert.match(buildSystemPrompt(ctx()), /Modern Standard Arabic, even if the user writes in a dialect/);
+});

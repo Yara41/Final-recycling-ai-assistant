@@ -8,7 +8,7 @@ after(async () => { await browser?.close(); server?.kill(); });
 
 async function openAgent(backend, opts) {
   const app = await openApp(browser, backend, opts);
-  await app.page.getByRole('button', { name: /talk to the agent/i }).first().click();
+  await app.page.getByRole('button', { name: /start with the agent/i }).first().click();
   await app.page.getByRole('tab', { name: 'Agent' }).waitFor();
   return app;
 }
