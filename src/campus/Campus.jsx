@@ -63,7 +63,7 @@ export default function Campus({ mode = 'showcase', universityId, lang = 'ar', o
   });
   const [tour, setTour] = React.useState(0);
   const [pinEdits, setPinEdits] = React.useState({});
-  const [say, setSay] = React.useState(null);
+  const [say] = React.useState(null);
   const [flights, setFlights] = React.useState([]);
   const [replayPins, setReplayPins] = React.useState({});
   const played = React.useRef(new Set());
@@ -111,19 +111,18 @@ export default function Campus({ mode = 'showcase', universityId, lang = 'ar', o
   React.useEffect(() => {
     if (!actions?.id || !view || played.current.has(actions.id)) return undefined;
     played.current.add(actions.id);
-    const fx = effectsForCards(actions.cards, { layout: view.layout, profileFaculty });
+    // Interim bridge to the new effects shape; the realistic scene replaces this component.
+    const fx = effectsForCards(actions.cards, { plazaBins: [{ id: 'any' }] });
     const box = stage.current?.getBoundingClientRect();
     const from = box ? { x: box.width / 2, y: box.height - 12 } : { x: 0, y: 0 };
-    let timer = null;
+    const reportLoc = (actions.cards ?? []).find((c) => c.location_id && (c.kind === 'report' || c.kind === 'audit' || c.kind === 'resolved'))?.location_id;
+    const home = view.layout.buildings.find((x) => x.faculty === profileFaculty)?.id ?? view.layout.buildings[0]?.id;
+    const timer = null;
     for (const e of fx) {
-      if (e.type === 'pin' && e.locationId) setPinEdits((p) => ({ ...p, [e.locationId]: 'warn' }));
-      if (e.type === 'unpin' && e.locationId) setPinEdits((p) => ({ ...p, [e.locationId]: null }));
-      if (e.type === 'eco') {
-        setSay({ target: e.buildingId, text: e.text });
-        timer = setTimeout(() => setSay(null), ECO_SAYS_MS);
-      }
+      if (e.type === 'report' && reportLoc) setPinEdits((p) => ({ ...p, [reportLoc]: 'warn' }));
+      if (e.type === 'resolved' && reportLoc) setPinEdits((p) => ({ ...p, [reportLoc]: null }));
       if (e.type === 'flight') {
-        const to = roofOf(e.buildingId) ?? from;
+        const to = roofOf(home) ?? from;
         setFlights((f) => [...f, { id: `${actions.id}-${f.length}`, from, to, points: e.points }]);
       }
     }
