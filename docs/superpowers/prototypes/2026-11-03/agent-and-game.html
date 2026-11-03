@@ -1,0 +1,321 @@
+<title>EcoWasteAI Agent and Game</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Instrument+Serif&family=Caveat:wght@600&display=swap">
+<style>
+/* Layout: the living campus fills the screen; the agent is a sheet over it, the game sits in front of the bins. Phone first. */
+:root {
+  --ink: #13284a;
+  --ink-soft: #3a5272;
+  --lime: #c6f36b;
+  --leaf: #0f6b4a;
+  --amber: #ffb547;
+  --sheet: rgba(255, 255, 255, .96);
+  --bubble: #eef4f8;
+  --line: rgba(19, 40, 74, .12);
+  --display: "El Messiri", serif;
+  --body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  color-scheme: light;
+}
+body.dark { --ink: #f4f1ea; --ink-soft: #c3cede; --sheet: rgba(14, 22, 44, .94); --bubble: rgba(255, 255, 255, .08); --line: rgba(255, 255, 255, .14); }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; background: #0b1428; color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.65; direction: rtl; }
+#scene { position: fixed; inset: 0; width: 100vw; height: 100%; display: block; }
+.shade { position: fixed; inset: 0; pointer-events: none; display: none; }
+.grain { position: fixed; inset: -50%; pointer-events: none; opacity: .06; mix-blend-mode: overlay; animation: grain 1s steps(6) infinite; z-index: 1; }
+@keyframes grain { 0%{transform:translate(0,0)} 25%{transform:translate(-3%,2%)} 50%{transform:translate(2%,-4%)} 75%{transform:translate(-4%,-1%)} 100%{transform:translate(0,0)} }
+.labels { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+.tag { position: absolute; left: 0; top: 0; white-space: nowrap; padding: 5px 12px; border-radius: 12px; background: rgba(255,255,255,.95); color: #13284a; font: 700 14px var(--body); box-shadow: 0 10px 24px -14px rgba(0,0,0,.5); opacity: 0; transition: opacity .3s; }
+.tag.plus { background: var(--lime); color: #10200a; font-size: 18px; direction: ltr; }
+.tag.warn { background: var(--amber); color: #2a1a00; }
+.tag.bad { background: #ffd9cf; color: #7a1f0b; }
+
+/* top bar */
+.top { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 8px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) 10px max(14px, env(safe-area-inset-left, 0px)); }
+.logo { direction: ltr; display: flex; align-items: baseline; font: 700 18px "Instrument Serif", Georgia, serif; color: var(--ink); }
+.logo .eco { font: 600 24px "Caveat", cursive; color: var(--leaf); margin-right: 1px; }
+body.dark .logo .eco { color: var(--lime); }
+.seg { display: flex; padding: 3px; border-radius: 99px; background: rgba(255,255,255,.7); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); margin-inline-start: auto; }
+body.dark .seg { background: rgba(10,18,40,.6); }
+.seg button { border: 0; background: none; padding: 6px 12px; border-radius: 99px; font: 600 13px var(--body); color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: #13284a; color: var(--lime); }
+body.dark .seg button[aria-pressed="true"] { background: var(--lime); color: #10200a; }
+.clock { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; background: rgba(255,255,255,.7); border: 1px solid var(--line); color: var(--ink); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 0; }
+body.dark .clock { background: rgba(10,18,40,.6); }
+.clock svg { width: 17px; height: 17px; }
+#clock-tx { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.pts { position: fixed; z-index: 10; top: calc(58px + env(safe-area-inset-top, 0px)); right: max(14px, env(safe-area-inset-right, 0px)); display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; background: var(--lime); color: #10200a; font: 600 13px var(--body); box-shadow: 0 10px 24px -16px rgba(0,0,0,.5); }
+.pts b { font: 700 16px var(--body); font-variant-numeric: tabular-nums; }
+
+/* agent sheet */
+.sheet { position: fixed; z-index: 8; left: 0; right: 0; bottom: 0; max-height: 56%; display: flex; flex-direction: column;
+  background: var(--sheet); border-radius: 26px 26px 0 0; box-shadow: 0 -20px 50px -30px rgba(0,0,0,.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+@media (min-width: 900px) { .sheet { left: auto; right: 24px; bottom: 24px; width: 420px; max-height: calc(100% - 120px); border-radius: 26px; } }
+.grip { width: 44px; height: 5px; border-radius: 3px; background: var(--line); margin: 2px auto 10px; flex: none; }
+.msgs { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 6px; }
+.hello h2 { font: 700 22px/1.3 var(--display); margin: 0; }
+.hello p { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chips button { border: 1px solid var(--line); background: var(--bubble); color: var(--ink); padding: 7px 12px; border-radius: 99px; font: 500 13px var(--body); cursor: pointer; }
+.m { max-width: 88%; padding: 9px 13px; border-radius: 18px; font-size: 14.5px; animation: in .3s ease both; }
+.m.me { align-self: flex-start; background: #13284a; color: #fff; border-radius: 18px 18px 18px 6px; }
+body.dark .m.me { background: var(--lime); color: #10200a; }
+.m.me img { display: block; width: 120px; height: 140px; object-fit: contain; background: #fff; border-radius: 12px; margin-bottom: 4px; }
+.m.ai { align-self: flex-end; background: var(--bubble); border-radius: 18px 18px 6px 18px; }
+.act { align-self: stretch; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--bubble); animation: in .3s ease both; }
+.act .i { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; flex: none; color: #fff; font-weight: 700; }
+.act b { display: block; font: 600 14px var(--body); }
+.act small { color: var(--ink-soft); font-size: 12.5px; }
+.act .p { margin-inline-start: auto; padding: 2px 10px; border-radius: 99px; background: var(--lime); color: #10200a; font: 800 14px var(--body); direction: ltr; }
+.dots { align-self: flex-end; display: flex; gap: 4px; padding: 10px 14px; border-radius: 16px; background: var(--bubble); }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--leaf); animation: b 1s infinite; }
+.dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes b { 50% { transform: translateY(-4px); opacity: .5; } }
+@keyframes in { from { opacity: 0; transform: translateY(6px); } }
+.composer { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex: none; }
+.shoot { flex: none; width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--lime); color: #10200a; display: grid; place-items: center; cursor: pointer; box-shadow: 0 10px 22px -12px rgba(80,120,20,.9); }
+.field { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 5px 6px 5px 5px; border-radius: 99px; border: 1.5px solid var(--line); background: var(--bubble); }
+.field input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--ink); font: 16px var(--body); padding: 6px 10px; }
+.field button { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; background: #13284a; color: var(--lime); }
+body.dark .field button { background: var(--lime); color: #10200a; }
+
+/* game */
+.game { position: fixed; z-index: 8; inset: 0; pointer-events: none; display: none; }
+.game.on { display: block; }
+.hud { position: absolute; top: calc(58px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; pointer-events: auto; }
+.hud span { padding: 5px 12px; border-radius: 99px; background: rgba(255,255,255,.85); color: #13284a; font: 600 13px var(--body); box-shadow: 0 10px 24px -16px rgba(0,0,0,.5); }
+.hud b { font-variant-numeric: tabular-nums; }
+.item { position: absolute; left: 50%; top: 30%; width: min(180px, 44vw); transform: translate(-50%, -50%); pointer-events: auto; touch-action: none; cursor: grab;
+  background: #fff; border-radius: 22px; padding: 12px 12px 10px; box-shadow: 0 30px 50px -26px rgba(0,0,0,.6); text-align: center; color: #13284a; transition: transform .45s cubic-bezier(.3,.7,.3,1), opacity .45s; }
+.item img { display: block; width: 100%; height: 120px; object-fit: contain; }
+.item b { display: block; margin-top: 6px; font: 700 15px var(--display); }
+.item.drag { transition: none; cursor: grabbing; }
+.bins { direction: ltr; position: absolute; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: min(560px, calc(100% - 28px)); pointer-events: auto; }
+.bins button { border: 0; border-radius: 16px; padding: 12px 4px; color: #fff; font: 600 13px var(--body); cursor: pointer; box-shadow: 0 12px 24px -16px rgba(0,0,0,.7); }
+.bins button:active { transform: scale(.96); }
+.why { position: absolute; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: min(420px, calc(100% - 28px)); padding: 10px 14px; border-radius: 16px; background: rgba(255,255,255,.95); color: #13284a; font-size: 14px; text-align: center; box-shadow: 0 18px 40px -24px rgba(0,0,0,.6); opacity: 0; transition: opacity .3s; }
+.why b { display: block; font: 700 15px var(--display); }
+.why.ok b { color: var(--leaf); } .why.no b { color: #b23a17; }
+.end { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: min(340px, calc(100% - 32px)); padding: 22px; border-radius: 24px; background: rgba(255,255,255,.97); color: #13284a; text-align: center; pointer-events: auto; box-shadow: 0 30px 60px -30px rgba(0,0,0,.6); display: none; }
+.end h2 { font: 700 30px var(--display); margin: 0; }
+.end p { margin: 6px 0 16px; color: #3a5272; }
+.end .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.btn { border: 0; border-radius: 99px; padding: 11px 18px; font: 600 14px var(--body); cursor: pointer; }
+.btn.primary { background: #13284a; color: var(--lime); }
+.btn.ghost { background: #eef4f8; color: #13284a; }
+@media (prefers-reduced-motion: reduce) { .grain { animation: none; } .item { transition: opacity .2s; } }
+</style>
+
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="shade" id="shade"></div>
+<div class="labels" id="labels" aria-hidden="true"></div>
+
+<header class="top">
+  <span class="logo"><span class="eco">Eco</span>WasteAI</span>
+  <div class="seg" role="group" aria-label="الصفحة">
+    <button type="button" id="go-agent" aria-pressed="true">الوكيل</button>
+    <button type="button" id="go-game" aria-pressed="false">لعبة الفرز</button>
+  </div>
+  <button class="clock" id="clock" type="button" aria-label="وقت المشهد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="clock-ic"></svg><span id="clock-tx">تلقائي</span></button>
+</header>
+<div class="pts" id="pts"><b id="pts-n">120</b> نقطة</div>
+
+<section class="sheet" id="sheet" aria-label="المحادثة مع الوكيل">
+  <div class="grip"></div>
+  <div class="msgs" id="msgs" aria-live="polite">
+    <div class="hello">
+      <h2>مرحباً، ماذا ستتخلّص منه اليوم؟</h2>
+      <p>التقط صورة للغرض، أو اكتب سؤالك.</p>
+      <div class="chips" id="chips">
+        <button type="button" data-q="bins">الحاوية قرب المقصف ممتلئة</button>
+        <button type="button" data-q="batt">أين أضع البطاريات؟</button>
+        <button type="button" data-q="me">كم نقاطي حتى الآن؟</button>
+      </div>
+    </div>
+  </div>
+  <form class="composer" id="form">
+    <button type="button" class="shoot" id="shoot" aria-label="التقط صورة"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+    <label class="field"><input id="q" placeholder="اكتب رسالتك..." aria-label="رسالتك"><button type="submit" aria-label="إرسال"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></label>
+  </form>
+</section>
+
+<section class="game" id="game" aria-label="لعبة الفرز">
+  <div class="hud"><span>الجولة <b id="round">١</b> من ٨</span><span>النتيجة <b id="score">٠</b></span></div>
+  <div class="item" id="item"><img id="item-img" alt=""><b id="item-name"></b></div>
+  <div class="why" id="why" role="status"><b></b><span></span></div>
+  <div class="bins" id="binbtns">
+    <button type="button" data-bin="general" style="background:#4b5563">نفايات عامة</button>
+    <button type="button" data-bin="paper" style="background:#2f8f4e">ورق وكرتون</button>
+    <button type="button" data-bin="plastic" style="background:#1f6fd1">بلاستيك</button>
+    <button type="button" data-bin="metal" style="background:#b8890c">معادن</button>
+  </div>
+  <div class="end" id="end"><h2 id="end-score"></h2><p>اسحب الغرض إلى حاويته، أو اضغط اسم الحاوية.</p><div class="row"><button class="btn primary" id="again" type="button">العب مرة أخرى</button><button class="btn ghost" id="to-agent" type="button">اسأل الوكيل</button></div></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script>/*ITEMS*/</script>
+<script>/*BOTTLE*/</script>
+<script>
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (id) => document.getElementById(id);
+  const ar = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
+  const g = document.createElement('canvas'); g.width = g.height = 160; const gx = g.getContext('2d'); const im = gx.createImageData(160, 160);
+  for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
+  gx.putImageData(im, 0, 0); const gr = document.createElement('div'); gr.className = 'grain'; gr.style.backgroundImage = `url(${g.toDataURL()})`; document.body.appendChild(gr);
+  if (!window.THREE) return;
+  const T = THREE;
+  if (T.ColorManagement) T.ColorManagement.legacyMode = false;
+  const isPhone = matchMedia('(max-width: 640px)').matches;
+  const canvas = $('scene');
+  const r = new T.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  r.setPixelRatio(Math.min(devicePixelRatio, isPhone ? 1.75 : 2));
+  r.outputEncoding = T.sRGBEncoding; r.toneMapping = T.ACESFilmicToneMapping; r.toneMappingExposure = .9;
+  r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap;
+  const scene = new T.Scene();
+  const cam = new T.PerspectiveCamera(isPhone ? 46 : 34, 1, .1, 500);
+  const rnd = (() => { let s = 11; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+/*ENGINE*/
+  // ---------- camera views ----------
+  const VIEWS = isPhone ? {
+    agent: { p: [5, 9, 22], l: [0, .5, 0] },
+    report: { p: [-6.5, 4.5, 6], l: [-12.4, .6, 1.2] },
+    game: { p: [0, 4.4, 14], l: [0, 2.4, 3.5] },
+  } : {
+    agent: { p: [-3, 7.5, 19], l: [3.5, 1.2, 1] },
+    report: { p: [-6.6, 2.8, -1.2], l: [-12.4, 1.2, 1.4] },
+    game: { p: [0, 2.8, 9.5], l: [0, 1.5, 3.5] },
+  };
+  let view = 'agent';
+  const camP = new T.Vector3(...VIEWS.agent.p), camL = new T.Vector3(...VIEWS.agent.l);
+  const labelsEl = $('labels');
+  const mkTag = (cls, txt) => { const el = document.createElement('div'); el.className = 'tag ' + cls; el.textContent = txt; labelsEl.appendChild(el); return el; };
+  const plus = mkTag('plus', '+10'), warnTag = mkTag('warn', 'تم إرسال البلاغ ✓'), gameTag = mkTag('plus', '');
+  function screenOf(v) { const p = v.clone().project(cam); return { x: (p.x + 1) / 2 * innerWidth, y: (1 - p.y) / 2 * innerHeight, ok: p.z < 1 }; }
+  function place(el, v, show) { const s = screenOf(v); el.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px) translate(-50%, -100%)`; el.style.opacity = show && s.ok ? 1 : 0; }
+  function resize() { r.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
+  addEventListener('resize', resize); resize();
+
+  // ---------- agent demo ----------
+  const msgs = $('msgs'); let points = 120; let busy = false;
+  const flight = { t: -1 }; let showPlus = 0, showWarn = false;
+  function add(html, cls) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d; }
+  const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
+  async function reply(steps) {
+    busy = true; const dots = add('<i></i><i></i><i></i>', 'dots'); await wait(1100); dots.remove();
+    for (const s of steps) { if (typeof s === 'function') await s(); else add(s[0], s[1]); await wait(380); }
+    busy = false;
+  }
+  const act = (color, icon, title, sub, pts) => [`<span class="i" style="background:${color}">${icon}</span><div><b>${title}</b><small>${sub}</small></div>${pts ? `<span class="p">+${pts}</span>` : ''}`, 'act'];
+  function countTo(n) { const from = points; const t0 = performance.now(); points = n; (function step(now) { const k = Math.min(1, (now - t0) / 700); $('pts-n').textContent = ar(Math.round(from + (n - from) * k)); if (k < 1) requestAnimationFrame(step); })(t0); }
+  $('pts-n').textContent = ar(points);
+  $('shoot').addEventListener('click', () => {
+    if (busy) return; document.querySelector('.hello')?.remove();
+    add(`<img src="${window.BOTTLE}" alt="صورة عبوة">رميت هذه`, 'm me');
+    reply([
+      act('#1f6fd1', '◎', 'عبوة بلاستيكية ← حاوية البلاستيك', 'تعرّفت عليها من الصورة'),
+      async () => { add(...act('#0f6b4a', '✓', 'سُجّلت ١ × عبوة بلاستيكية', 'فرز صحيح · موثّقة بصورة', 10)); view = 'agent'; flight.t = 0; },
+      ['أحسنت. العبوات البلاستيكية النظيفة مكانها حاوية البلاستيك، وأضفت ١٠ نقاط إلى رصيدك ورصيد كليتك.', 'm ai'],
+    ]);
+  });
+  function ask(kind, text) {
+    if (busy) return; document.querySelector('.hello')?.remove(); add(text, 'm me');
+    if (kind === 'bins') reply([async () => { view = 'report'; await wait(700); showWarn = true; add(...act('#e08a00', '!', 'أُرسل بلاغ إلى فريق المرافق', 'حاوية ممتلئة · قرب المقصف')); }, ['شكراً لك. أبلغت فريق المرافق، وسيصلهم البلاغ مرتّباً حسب الأولوية.', 'm ai']]);
+    else if (kind === 'batt') reply([act('#1f6fd1', '⌖', 'نقطة تسليم خاصة', 'مبنى شؤون الطلبة · الطابق الأرضي'), ['البطاريات لا توضع في أي حاوية عادية. سلّمها إلى نقطة التسليم الخاصة في مبنى شؤون الطلبة.', 'm ai']]);
+    else if (kind === 'me') reply([act('#0f6b4a', '★', `${ar(points)} نقطة · ${ar(12)} غرضاً`, 'فرز صحيح ٩٢٪ · موثّقة بالصور'), ['أداؤك ممتاز هذا الأسبوع. التقط صورة لكل غرض لتُحتسب نقاطه.', 'm ai']]);
+    else reply([['يمكنني مساعدتك في فرز النفايات وتسجيلها والإبلاغ عن الحاويات. التقط صورة للغرض لأبدأ.', 'm ai']]);
+  }
+  $('chips').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) ask(b.dataset.q, b.textContent); });
+  $('form').addEventListener('submit', (e) => { e.preventDefault(); const v = $('q').value.trim(); if (!v) return; $('q').value = ''; ask(/ممتلئ|مليان/.test(v) ? 'bins' : /بطاري/.test(v) ? 'batt' : /نقاط/.test(v) ? 'me' : 'x', v.replace(/[<>]/g, '')); });
+
+  // ---------- game ----------
+  const ITEMS = [
+    ['bottle', 'عبوة ماء بلاستيكية', 'plastic', 'العبوات البلاستيكية النظيفة تُعاد تدويرها في حاوية البلاستيك.'],
+    ['chips', 'كيس شيبس', 'general', 'أكياس الشيبس مصنوعة من طبقات مختلطة ولا يمكن إعادة تدويرها.'],
+    ['can', 'علبة مشروب معدنية', 'metal', 'علب المشروبات المعدنية مكانها حاوية المعادن.'],
+    ['pizza', 'علبة بيتزا دهنية', 'general', 'الكرتون الملوّث بالدهون لا يُعاد تدويره.'],
+    ['paper', 'ورقة مستعملة', 'paper', 'الورق النظيف والجاف يُعاد تدويره.'],
+    ['tissue', 'منديل مستعمل', 'general', 'المناديل المستعملة تذهب إلى النفايات العامة.'],
+    ['cardboard', 'كرتونة نظيفة', 'paper', 'الكرتون النظيف يوضع مع الورق بعد طيّه.'],
+    ['banana', 'قشر موز', 'general', 'بقايا الطعام تذهب إلى النفايات العامة في هذه الجامعة.'],
+  ];
+  const binObj = {}; mainBins.children.forEach((b) => { binObj[b.userData.kind] = b; });
+  const binTop = (k) => { const v = new T.Vector3(); binObj[k].getWorldPosition(v); v.y = 1.4; return v; };
+  let round = 0, score = 0, locked = false;
+  const itemEl = $('item'), why = $('why');
+  function showItem() {
+    const [key, name] = ITEMS[round];
+    $('item-img').src = window.ITEMS[key]; $('item-name').textContent = name;
+    itemEl.style.transition = 'none'; itemEl.style.transform = 'translate(-50%, -50%) scale(.6)'; itemEl.style.opacity = 0; itemEl.style.left = '50%'; itemEl.style.top = '30%';
+    requestAnimationFrame(() => requestAnimationFrame(() => { itemEl.style.transition = ''; itemEl.style.transform = 'translate(-50%, -50%) scale(1)'; itemEl.style.opacity = 1; }));
+    $('round').textContent = ar(round + 1); $('score').textContent = ar(score); locked = false;
+  }
+  function lidBounce(k) { const lid = binObj[k].userData.lid; const t0 = performance.now(); (function s(now) { const q = Math.min(1, (now - t0) / 600); lid.rotation.x = -Math.sin(q * Math.PI) * .9; lid.position.z = -Math.sin(q * Math.PI) * .3; if (q < 1) requestAnimationFrame(s); })(t0); }
+  function choose(k) {
+    if (locked || round >= ITEMS.length) return; locked = true;
+    const [, , right, text] = ITEMS[round]; const good = k === right;
+    const s = screenOf(binTop(k));
+    itemEl.style.left = s.x + 'px'; itemEl.style.top = s.y + 'px'; itemEl.style.transform = 'translate(-50%, -50%) scale(.15) rotate(25deg)'; itemEl.style.opacity = 0;
+    lidBounce(k);
+    if (good) { score += 10; gameTag.className = 'tag plus'; gameTag.textContent = '+10'; } else { gameTag.className = 'tag bad'; gameTag.textContent = 'ليست هنا'; }
+    gameTag.dataset.bin = k; gameTag.dataset.until = performance.now() + 1400;
+    why.className = 'why ' + (good ? 'ok' : 'no'); why.querySelector('b').textContent = good ? 'إجابة صحيحة' : 'الحاوية الصحيحة: ' + { general: 'نفايات عامة', paper: 'ورق وكرتون', plastic: 'بلاستيك', metal: 'معادن' }[right];
+    why.querySelector('span').textContent = text; why.style.opacity = 1;
+    $('score').textContent = ar(score);
+    setTimeout(() => { why.style.opacity = 0; round += 1; if (round < ITEMS.length) showItem(); else finish(); }, 2300);
+  }
+  function finish() { itemEl.style.opacity = 0; $('end-score').textContent = `${ar(score / 10)} من ${ar(ITEMS.length)}`; $('end').style.display = 'block'; }
+  $('again').addEventListener('click', () => { $('end').style.display = 'none'; round = 0; score = 0; showItem(); });
+  $('to-agent').addEventListener('click', () => setView('agent'));
+  $('binbtns').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) choose(b.dataset.bin); });
+  // drag the card onto a bin
+  let drag = null;
+  itemEl.addEventListener('pointerdown', (e) => { if (locked) return; drag = { id: e.pointerId }; itemEl.setPointerCapture(e.pointerId); itemEl.classList.add('drag'); });
+  itemEl.addEventListener('pointermove', (e) => { if (!drag) return; itemEl.style.left = e.clientX + 'px'; itemEl.style.top = e.clientY + 'px'; });
+  itemEl.addEventListener('pointerup', (e) => {
+    if (!drag) return; drag = null; itemEl.classList.remove('drag');
+    let best = null, bd = 1e9; Object.keys(binObj).forEach((k) => { const s = screenOf(binTop(k)); const d = Math.hypot(s.x - e.clientX, s.y - e.clientY); if (d < bd) { bd = d; best = k; } });
+    if (bd < Math.max(90, innerWidth * .12)) choose(best); else { itemEl.style.left = '50%'; itemEl.style.top = '30%'; }
+  });
+
+  function setView(v) {
+    view = v === 'game' ? 'game' : 'agent';
+    $('go-agent').setAttribute('aria-pressed', view === 'agent'); $('go-game').setAttribute('aria-pressed', view === 'game');
+    $('sheet').hidden = view === 'game'; $('pts').hidden = view === 'game'; $('game').classList.toggle('on', view === 'game');
+    showWarn = false;
+    if (view === 'game') { $('end').style.display = 'none'; round = 0; score = 0; showItem(); }
+    try { history.replaceState(null, '', '#' + view); } catch (e) { /* ignore */ }
+  }
+  $('go-agent').addEventListener('click', () => setView('agent'));
+  $('go-game').addEventListener('click', () => setView('game'));
+  setView(location.hash === '#game' ? 'game' : 'agent');
+
+  // ---------- frame ----------
+  const t0 = performance.now(); const mouse = { x: 0, y: 0 };
+  addEventListener('pointermove', (e) => { if (!drag) { mouse.x = e.clientX / innerWidth - .5; mouse.y = e.clientY / innerHeight - .5; } });
+  function frame(now) {
+    const t = (now - t0) / 1000;
+    const V = VIEWS[view === 'agent' && showWarn ? 'report' : view];
+    const k = reduce || window.__snap ? 1 : .05;
+    camP.lerp(new T.Vector3(...V.p), k); camL.lerp(new T.Vector3(...V.l), k);
+    cam.position.copy(camP); if (!reduce && view !== 'game') { cam.position.x += Math.sin(t * .15) * .5 + mouse.x * 1.2; cam.position.y += -mouse.y * .6; }
+    cam.lookAt(camL);
+    if (flight.t >= 0) {
+      flight.t += 1 / 60 / .9; const f = Math.min(1, flight.t);
+      const p = new T.Vector3(3, 6, 12).lerp(blueBin, f); p.y += Math.sin(f * Math.PI) * 3; bottle.position.copy(p); bottle.rotation.z = f * 7; bottle.visible = f < 1;
+      if (f >= 1) { flight.t = -1; showPlus = now + 1600; countTo(points + 10); lidBounce('plastic'); }
+    }
+    place(plus, blueBin.clone().add(new T.Vector3(0, 1.3, 0)), now < showPlus && view === 'agent');
+    place(warnTag, new T.Vector3(-12.4, 2.5, 1.5), showWarn && view === 'agent');
+    if (gameTag.dataset.bin) place(gameTag, binTop(gameTag.dataset.bin).add(new T.Vector3(0, .9, 0)), view === 'game' && now < +gameTag.dataset.until);
+    if (!reduce) sway.forEach((s) => { s.m.rotation.z = Math.sin(t * 1.3 + s.p) * s.a; });
+    r.render(scene, cam);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+});
+</script>
