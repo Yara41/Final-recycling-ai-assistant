@@ -59,3 +59,4 @@
 .campus-stage { position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: 28px; overflow: hidden;
   background: linear-gradient(180deg, var(--sky), var(--paper)); }
 .campus-fallback { position: absolute; inset: 0; }
+.hero-campus .campus { aspect-ratio: 4 / 3; height: auto; border-radius: var(--r-card); }

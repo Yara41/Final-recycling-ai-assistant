@@ -60,17 +60,18 @@ export const SNAPSHOT = {
   open_reports: [{ location_id: 'l1', issue: 'contaminated', contamination_pct: 45 }],
 };
 
-export async function openApp(browser, backend, { speech = true, lang = 'en', reducedMotion = 'reduce', query = '' } = {}) {
-  const context = await browser.newContext({ reducedMotion });
+export async function openApp(browser, backend, { speech = true, lang = 'en', reducedMotion = 'reduce', query = '', viewport, snap = false } = {}) {
+  const context = await browser.newContext({ reducedMotion, ...(viewport ? { viewport } : {}) });
   const page = await context.newPage();
   const state = { profile: backend.profile ?? null, agentCalls: [], rpc: [] };
-  await page.addInitScript(({ speech, lang }) => {
+  await page.addInitScript(({ speech, lang, snap }) => {
     localStorage.setItem('eco_lang', lang);
+    if (snap) window.__snap = 1;
     if (!speech) { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; }
     else if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
       window.webkitSpeechRecognition = class { start() {} stop() {} };
     }
-  }, { speech, lang });
+  }, { speech, lang, snap });
 
   await page.route('**/auth/v1/**', (route) => json(route, {
     access_token: 'tok', refresh_token: 'ref', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600,

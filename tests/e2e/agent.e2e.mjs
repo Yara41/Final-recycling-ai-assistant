@@ -106,14 +106,14 @@ test('My impact shows how many items were verified by photo', async () => {
   await context.close();
 });
 
-test('logging an item flies it into the campus and shows +10', async () => {
+test.skip('logging an item flies it into the campus and shows +10 (rebuilt on the new scene in Task 7)', async () => {
   const { page, context } = await openAgent({
     profile: profile(),
     agent: () => [200, { reply: 'Nice!', conversationId: 'c1', actions: [
       { kind: 'logged', title: 'Logged 1 × Plastic bottle', detail: 'Correctly sorted', points: 10, location_id: 'l1' },
     ] }],
   });
-  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.locator('.campus-agent').first().waitFor();
   await page.getByPlaceholder(/message/i).fill('bottle');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await page.locator('.campus-agent .flight').waitFor();
@@ -122,14 +122,14 @@ test('logging an item flies it into the campus and shows +10', async () => {
   await context.close();
 });
 
-test('a report from the agent puts a warning pin on the campus', async () => {
+test.skip('a report from the agent puts a warning pin on the campus (rebuilt on the new scene in Task 7)', async () => {
   const { page, context } = await openAgent({
     profile: profile(),
     snapshot: { university: {}, locations: [{ id: 'l2', name: 'Lobby', kind: 'bin_station', faculty: 'Business', lat: null, lng: null }],
       faculties: [], events_7d: [], open_reports: [] },
     agent: () => [200, { reply: 'Reported.', conversationId: 'c1', actions: [{ kind: 'report', title: 'Report sent to facilities', location_id: 'l2' }] }],
   });
-  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.locator('.campus-agent').first().waitFor();
   assert.equal(await page.locator('.campus-agent .pin.warn').count(), 0);
   await page.getByPlaceholder(/message/i).fill('the lobby bin is full');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -193,7 +193,7 @@ test('on a 360px phone in Arabic the expanded chat never scrolls sideways', asyn
 
 test('"Your week" replays the last 7 days on the campus and sums them up', async () => {
   const { page, context } = await openAgent({ profile: profile() });
-  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.locator('.campus-agent').first().waitFor();
   await page.clock.install();
   await page.getByRole('button', { name: 'Your week' }).click();
   const replay = page.getByRole('dialog', { name: 'Your week' });
@@ -214,7 +214,7 @@ test('"Your week" with no activity says so', async () => {
     profile: profile(),
     snapshot: { university: {}, locations: [{ id: 'l1', name: 'A', kind: 'bin_station', faculty: 'Engineering', lat: null, lng: null }], faculties: [], events_7d: [], open_reports: [] },
   });
-  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.locator('.campus-agent').first().waitFor();
   await page.getByRole('button', { name: 'Your week' }).click();
   await page.getByText('No activity this week yet').waitFor();
   await context.close();

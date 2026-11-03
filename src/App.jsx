@@ -3,6 +3,8 @@ import AgentPage from './agent/AgentPage.jsx';
 import Home from './pages/Home.jsx';
 import Learn from './pages/Learn.jsx';
 import ClockButton from './campus/ClockButton.jsx';
+import Campus from './campus/Campus.jsx';
+import { DEMO_UNI } from './pages/Home.jsx';
 import { copy } from './pages/copy.js';
 import './app-shell.css';
 
@@ -17,6 +19,8 @@ function readLang() {
 }
 
 // Site shell: header (logo, navigation, language) and the current page.
+const STILL_VIEW = (() => { try { return new URLSearchParams(window.location.search).has('still'); } catch { return false; } })();
+
 export default function App() {
   const [lang, setLang] = useState(readLang);
   const [page, setPage] = useState('home');
@@ -34,6 +38,11 @@ export default function App() {
     setPage(next);
     window.scrollTo({ top: 0 });
   };
+
+  // ?still=1 shows only the campus, used to render the still images for weak devices.
+  if (STILL_VIEW) {
+    return <div className="still-view"><Campus universityId={DEMO_UNI} lang={lang} /></div>;
+  }
 
   return (
     <div className={`site page-${page}`} dir={dir}>

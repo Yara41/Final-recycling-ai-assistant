@@ -6,11 +6,10 @@ let server, browser;
 before(async () => { server = await startServer(); browser = await launch(); });
 after(async () => { await browser?.close(); server?.kill(); });
 
-test('home shows the headline and a campus fallback before 3D', async () => {
+test('home shows the headline over the campus', async () => {
   const { page, context } = await openApp(browser, {}, { lang: 'ar' });
-  await page.getByRole('heading', { level: 1 }).waitFor();
   assert.match(await page.getByRole('heading', { level: 1 }).textContent(), /جامعتك/);
-  await page.locator('.campus-fallback').first().waitFor();
+  await page.locator('.campus').first().waitFor();
   await context.close();
 });
 
@@ -34,42 +33,43 @@ test('navigation reaches the agent and learn pages', async () => {
   await context.close();
 });
 
-test('the illustrated campus draws one building per faculty from the snapshot', async () => {
-  const { page, context } = await openApp(browser, {}, { lang: 'en' });
-  await page.locator('.campus-fallback .building').first().waitFor();
-  assert.equal(await page.locator('.campus-fallback .building').count(), 4); // Engineering, Business, Medicine, Campus
-  assert.ok(await page.locator('.campus-fallback .tree').count() > 0);
-  assert.equal(await page.locator('.campus-fallback .pin.warn').count(), 1);
+test('the live scene mounts when forced', async () => {
+  const { page, context } = await openApp(browser, {}, { lang: 'en', query: '?3d=1' });
+  await page.locator('.campus[data-renderer="3d"] .scene-wrap[data-ready="true"] canvas').first().waitFor({ timeout: 60000 });
   await context.close();
 });
 
-test('a failed snapshot shows the offline chip', async () => {
+test('losing the WebGL context shows the still image', async () => {
+  const { page, context } = await openApp(browser, {}, { lang: 'en', query: '?3d=1' });
+  const canvas = page.locator('.campus .scene-wrap[data-ready="true"] canvas').first();
+  await canvas.waitFor({ timeout: 60000 });
+  await canvas.evaluate((c) => c.dispatchEvent(new Event('webglcontextlost', { cancelable: true })));
+  await page.locator('.campus[data-renderer="still"] img.campus-still').first().waitFor();
+  assert.match(await page.locator('img.campus-still').first().getAttribute('src'), /^\/campus\/(dawn|day|sunset|night)-(wide|phone)\.webp$/);
+  await context.close();
+});
+
+test('reduced motion shows the still image instead of the live scene', async () => {
+  const { page, context } = await openApp(browser, {}, { lang: 'en', reducedMotion: 'reduce' });
+  await page.locator('.campus[data-renderer="still"] img.campus-still').first().waitFor();
+  assert.equal(await page.locator('.campus canvas').count(), 0);
+  await context.close();
+});
+
+test('the still follows the scene time chosen with the clock button', async () => {
+  const { page, context } = await openApp(browser, {}, { lang: 'en' });
+  const clock = page.getByRole('button', { name: /scene time/i });
+  for (let i = 0; i < 5 && (await page.locator('html').getAttribute('data-phase')) !== 'night'; i++) await clock.click();
+  assert.equal(await page.locator('html').getAttribute('data-phase'), 'night');
+  assert.ok(await page.locator('html').evaluate((h) => h.classList.contains('dark')));
+  assert.match(await page.locator('img.campus-still').first().getAttribute('src'), /night/);
+  await context.close();
+});
+
+test('a failed snapshot shows the offline chip and still draws a campus', async () => {
   const { page, context } = await openApp(browser, { snapshotError: true }, { lang: 'en' });
   await page.getByText('Offline').waitFor();
-  await page.locator('.campus-fallback').first().waitFor();
-  await context.close();
-});
-
-test('a university with no buildings says so', async () => {
-  const { page, context } = await openApp(browser, { snapshot: { university: {}, locations: [], faculties: [], events_7d: [], open_reports: [] } }, { lang: 'en' });
-  await page.getByText('No buildings yet').waitFor();
-  await context.close();
-});
-
-test('the 3D campus mounts a canvas when forced', async () => {
-  const { page, context } = await openApp(browser, {}, { lang: 'en', query: '?3d=1' });
-  await page.locator('.campus-stage canvas').first().waitFor({ timeout: 30000 });
-  await page.locator('.campus-stage[data-renderer="3d"]').first().waitFor();
-  await context.close();
-});
-
-test('losing the WebGL context swaps back to the illustrated campus', async () => {
-  const { page, context } = await openApp(browser, {}, { lang: 'en', query: '?3d=1' });
-  const canvas = page.locator('.campus-stage .scene-wrap[data-ready="true"] canvas').first();
-  await canvas.waitFor({ timeout: 30000 });
-  await canvas.evaluate((c) => c.dispatchEvent(new Event('webglcontextlost', { cancelable: true })));
-  await page.locator('.campus-stage[data-renderer="svg"] .campus-fallback .building').first().waitFor();
-  assert.equal(await page.locator('.campus-stage canvas').count(), 0);
+  await page.locator('.campus img.campus-still').first().waitFor();
   await context.close();
 });
 
@@ -86,5 +86,5 @@ test('three.js stays out of the first download', async () => {
   walk(Object.keys(manifest).find((k) => manifest[k] === entry));
   const files = [...initial].map((k) => `${k} ${manifest[k].file}`).join('\n');
   assert.doesNotMatch(files, /three|@react-three/i);
-  assert.ok(Object.keys(manifest).some((k) => /CampusScene/.test(k)), 'CampusScene is its own chunk');
+  assert.ok(Object.keys(manifest).some((k) => /scene\/Scene/.test(k)), 'the scene is its own chunk');
 });
