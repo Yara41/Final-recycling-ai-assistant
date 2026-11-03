@@ -48,17 +48,19 @@ export default function App() {
     <div className={`site page-${page}`} dir={dir}>
       <header className="topbar">
         <button type="button" className="brand" onClick={() => go('home')} aria-label="EcoWasteAI">
-          <img src="/logo.png" alt="" />
+          <span className="logo-eco">Eco</span><span className="logo-rest">WasteAI</span>
         </button>
         <nav aria-label={lang === 'en' ? 'Main' : 'التنقل'}>
           {PAGES.map((p) => (
-            <button key={p} type="button" className={page === p ? 'active' : ''} aria-current={page === p ? 'page' : undefined} onClick={() => go(p)}>
+            <button key={p} type="button" className={`${page === p ? 'active' : ''} nav-${p}`} aria-current={page === p ? 'page' : undefined} onClick={() => go(p)}>
               {c.nav[p]}
             </button>
           ))}
         </nav>
         <ClockButton lang={lang} />
-        <button type="button" className="lang" onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>{c.langSwitch}</button>
+        <button type="button" className="lang" aria-label={c.langSwitch} onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>
+          <span className="long">{c.langSwitch}</span><span className="short" aria-hidden="true">{lang === 'en' ? 'ع' : 'EN'}</span>
+        </button>
       </header>
 
       {page === 'home' && <Home lang={lang} onStart={() => go('agent')} onPlay={() => go('learn')} />}

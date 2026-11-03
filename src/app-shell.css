@@ -21,3 +21,26 @@
 .clock-btn { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: var(--r-pill); padding: 6px 10px; cursor: pointer; font: 600 13px var(--body); }
 @media (max-width: 520px) { .clock-btn .clock-text { display: none; } }
 .still-view { position: fixed; inset: 0; }
+.brand { direction: ltr; display: inline-flex; align-items: baseline; color: var(--ink); }
+.logo-eco { font: 600 26px "Caveat", cursive; color: var(--leaf); margin-right: 1px; }
+:root.dark .logo-eco { color: var(--lime); }
+.logo-rest { font: 400 20px "Instrument Serif", Georgia, serif; letter-spacing: .3px; }
+.page-home .topbar { position: fixed; inset-inline: 0; top: 0; background: transparent; border-bottom: 0; backdrop-filter: none; }
+.page-home .topbar nav, .page-home .lang, .page-home .clock-btn { background: color-mix(in srgb, var(--card) 72%, transparent); backdrop-filter: blur(10px); }
+.lang .short { display: none; }
+.topbar nav button { white-space: nowrap; }
+@media (max-width: 520px) {
+  .topbar { gap: 6px; }
+  .topbar nav .nav-home { display: none; }
+  .lang { padding: 7px 10px; }
+  .lang .long { display: none; }
+  .lang .short { display: inline; }
+  .logo-eco { font-size: 22px; }
+  .logo-rest { font-size: 17px; }
+}
+@media (max-width: 400px) {
+  .topbar { padding-inline: 12px; }
+  .topbar nav { padding: 3px; gap: 2px; }
+  .topbar nav button { padding: 6px 8px; font-size: 12.5px; }
+  .clock-btn { padding: 6px 8px; }
+}

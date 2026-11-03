@@ -90,6 +90,7 @@ function World({ world, still, onApi }) {
         return { x: ((p.x + 1) / 2) * size.width, y: ((1 - p.y) / 2) * size.height, visible: p.z < 1 };
       },
       binTop: (id) => binTop(world, id),
+      binIds: () => [...world.plaza.items.keys()],
       flight(id, t, from = FROM) {
         if (t === null || t === undefined || t < 0 || t >= 1) { world.bottle.visible = false; return; }
         const [tx, ty, tz] = binTop(world, id);
