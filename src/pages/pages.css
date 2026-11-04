@@ -67,3 +67,4 @@
 
 /* Learn page (the sorting game) */
 .learn { min-height: 100%; }
+.learn { display: flex; flex-direction: column; }

@@ -27,7 +27,7 @@ test('language toggle switches direction to ltr and back', async () => {
 test('navigation reaches the agent and learn pages', async () => {
   const { page, context } = await openApp(browser, { profile: null }, { lang: 'en' });
   await page.getByRole('navigation').getByRole('button', { name: 'Sorting game' }).click();
-  await page.getByRole('heading', { name: /where does it go/i }).waitFor();
+  await page.getByRole('region', { name: 'Sorting game' }).waitFor();
   await page.getByRole('navigation').getByRole('button', { name: 'Agent' }).click();
   await page.getByRole('button', { name: 'EcoWaste Demo University' }).waitFor();
   await context.close();

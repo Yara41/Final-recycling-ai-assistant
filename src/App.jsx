@@ -64,7 +64,7 @@ export default function App() {
       </header>
 
       {page === 'home' && <Home lang={lang} onStart={() => go('agent')} onPlay={() => go('learn')} />}
-      {page === 'learn' && <Learn lang={lang} />}
+      {page === 'learn' && <Learn lang={lang} onAsk={() => go('agent')} />}
       {page === 'agent' && (
         <main className="agent-main">
           <AgentPage lang={lang} dir={dir} prompt={agentPrompt} />
