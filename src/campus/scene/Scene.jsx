@@ -68,7 +68,7 @@ function Rig({ shot, still, fov }) {
   return null;
 }
 
-function World({ world, still, onApi }) {
+function World({ world, still, onApi, onReport }) {
   const get = useThree((s) => s.get);
   const lids = React.useRef(new Map());
   useFrame((state) => {
@@ -99,18 +99,20 @@ function World({ world, still, onApi }) {
         world.bottle.position.copy(p); world.bottle.rotation.z = t * 7; world.bottle.visible = true;
       },
       lid(id) { lids.current.set(id, performance.now()); },
-      setReport(on) { world.report.group.visible = Boolean(on); },
+      setReport(on) { world.report.group.visible = Boolean(on); onReport?.(Boolean(on)); },
       reportTop: () => reportTop(world),
     };
     onApi(api);
     return () => onApi(null);
-  }, [world, onApi, get]);
+  }, [world, onApi, onReport, get]);
   return <primitive object={world.root} />;
 }
 
 export default function Scene({ composition, sky, shot, layout = 'wide', still = false, onApi, onContextLost, onReady }) {
   const world = React.useMemo(() => buildWorld(composition), [composition]);
   const [ready, setReady] = React.useState(false);
+  const [report, setReport] = React.useState(Boolean(composition.reportBin));
+  React.useEffect(() => { setReport(Boolean(composition.reportBin)); }, [composition]);
   const phone = layout === 'phone';
   const onCreated = React.useCallback(({ gl }) => {
     gl.toneMappingExposure = 0.9;
@@ -122,7 +124,7 @@ export default function Scene({ composition, sky, shot, layout = 'wide', still =
     world.root.traverse((o) => { o.geometry?.dispose?.(); const m = o.material; (Array.isArray(m) ? m : m ? [m] : []).forEach((x) => { x.map?.dispose?.(); x.dispose?.(); }); });
   }, [world]);
   return (
-    <div className="scene-wrap" data-ready={ready ? 'true' : undefined}>
+    <div className="scene-wrap" data-ready={ready ? 'true' : undefined} data-report={report ? 'true' : 'false'}>
       <Canvas
         shadows="soft"
         dpr={[1, phone ? 1.75 : 2]}
@@ -132,7 +134,7 @@ export default function Scene({ composition, sky, shot, layout = 'wide', still =
       >
         <Sky sky={sky} world={world} shadowSize={phone ? 1024 : 2048} />
         <Rig shot={shot} still={still} fov={phone ? 46 : 34} />
-        <World world={world} still={still} onApi={onApi} />
+        <World world={world} still={still} onApi={onApi} onReport={setReport} />
       </Canvas>
     </div>
   );

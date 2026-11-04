@@ -26,10 +26,10 @@ export const getCampusStats: Tool = {
         data: stats,
         card: {
           kind: "stats",
-          title: t(ctx, `آخر ${days} يوم: ${totals.items ?? 0} غرض`, `Last ${days} days: ${totals.items ?? 0} items`),
+          title: t(ctx, `${days === 7 ? "آخر 7 أيام" : "آخر 30 يوماً"}: عدد الأغراض ${totals.items ?? 0}`, `Last ${days} days: ${totals.items ?? 0} items`),
           detail: t(
             ctx,
-            `فرز صحيح ${Math.round((totals.correct_rate ?? 0) * 100)}% • ${totals.active_users ?? 0} مستخدم نشط`,
+            `فرز صحيح ${Math.round((totals.correct_rate ?? 0) * 100)}% • المستخدمون النشطون: ${totals.active_users ?? 0}`,
             `${Math.round((totals.correct_rate ?? 0) * 100)}% correctly sorted • ${totals.active_users ?? 0} active users`,
           ),
           data: stats,

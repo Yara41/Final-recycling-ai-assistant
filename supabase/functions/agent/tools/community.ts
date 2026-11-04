@@ -58,7 +58,7 @@ export const findDropOff: Tool = {
         card: {
           kind: "dropoff",
           title: hits.length
-            ? t(ctx, `${hits.length} مكان مناسب`, `${hits.length} matching places`)
+            ? t(ctx, `عدد الأماكن المناسبة: ${hits.length}`, `${hits.length} matching places`)
             : t(ctx, "لا يوجد مكان مسجّل لهذه المادة", "No place registered for this material"),
           detail: hits.slice(0, 3).map((h) => h.name).join(" • "),
           data: hits,
@@ -86,10 +86,10 @@ export const getMyImpact: Tool = {
         data: d,
         card: {
           kind: "impact",
-          title: t(ctx, `${d.points} نقطة • ${d.items} غرض`, `${d.points} points • ${d.items} items`),
+          title: t(ctx, `النقاط: ${d.points} • الأغراض: ${d.items}`, `${d.points} points • ${d.items} items`),
           detail: t(
             ctx,
-            `≈ ${Number(d.est_co2e_kg).toFixed(2)} كغ CO₂e (تقديري) • فرز صحيح ${d.correct_pct}% • ${d.streak_days} يوم متتالي`,
+            `≈ ${Number(d.est_co2e_kg).toFixed(2)} كغ CO₂e (تقديري) • فرز صحيح ${d.correct_pct}% • أيام متتالية: ${d.streak_days}`,
             `≈ ${Number(d.est_co2e_kg).toFixed(2)} kg CO₂e (estimate) • ${d.correct_pct}% correct • ${d.streak_days}-day streak`,
           ),
           data: d,
@@ -116,7 +116,7 @@ export const getLeaderboard: Tool = {
         data: rows,
         card: {
           kind: "leaderboard",
-          title: t(ctx, "ترتيب الكليات (30 يوم)", "Faculty ranking (30 days)"),
+          title: t(ctx, "ترتيب الكليات (آخر 30 يوماً)", "Faculty ranking (30 days)"),
           detail: rows.slice(0, 3).map((r, i) => `${i + 1}. ${r.faculty} (${r.points})`).join(" • "),
           data: rows,
         },

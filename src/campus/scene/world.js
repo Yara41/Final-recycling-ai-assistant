@@ -39,7 +39,7 @@ export function buildWorld(composition) {
   const plaza = binSet(composition.plazaBins, mats);
   plaza.group.position.copy(PLAZA_BINS_AT); root.add(plaza.group);
   const report = binSet(composition.plazaBins, mats, { full: true });
-  report.group.position.copy(REPORT_BIN_AT); report.group.rotation.y = Math.PI / 2; report.group.visible = false; root.add(report.group);
+  report.group.position.copy(REPORT_BIN_AT); report.group.rotation.y = Math.PI / 2; report.group.visible = Boolean(composition.reportBin); root.add(report.group);
 
   const bottle = shadowy(new THREE.Mesh(
     new THREE.LatheGeometry([[0, 0], [0.13, 0], [0.14, 0.05], [0.14, 0.42], [0.06, 0.55], [0.05, 0.66], [0, 0.66]].map(([a, b]) => new THREE.Vector2(a, b)), 16),

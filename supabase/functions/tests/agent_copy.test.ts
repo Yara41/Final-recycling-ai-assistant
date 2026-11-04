@@ -16,3 +16,15 @@ Deno.test("agent card text has no dialect", async () => {
   }
   assertEquals(bad, []);
 });
+
+// "30 يوم" or "${n} بلاغ" break Arabic number agreement; card titles avoid a bare number before a singular noun.
+const BARE_COUNT = /(\$\{[^}]+\}|\d+) (يوم|مكان|بلاغ|غرض|نقطة|مستخدم)(?![اً])/;
+
+Deno.test("agent card text keeps Arabic number agreement", async () => {
+  const bad: string[] = [];
+  for (const f of FILES) {
+    const src = await Deno.readTextFile(new URL(`../agent/tools/${f}`, import.meta.url));
+    src.split("\n").forEach((line, i) => { if (BARE_COUNT.test(line)) bad.push(`${f}:${i + 1}: ${line.trim().slice(0, 80)}`); });
+  }
+  assertEquals(bad, []);
+});

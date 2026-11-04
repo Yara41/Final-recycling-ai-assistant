@@ -159,7 +159,7 @@ export const listOpenReports: Tool = {
       return {
         ok: true,
         data: ranked,
-        card: { kind: "reports", title: t(ctx, `${ranked.length} بلاغ مفتوح`, `${ranked.length} open reports`), data: ranked },
+        card: { kind: "reports", title: t(ctx, `البلاغات المفتوحة: ${ranked.length}`, `${ranked.length} open reports`), data: ranked },
       };
     }),
 };

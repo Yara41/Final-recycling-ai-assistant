@@ -232,3 +232,34 @@ test('the camera button opens the photo picker', async () => {
   await chooser;
   await context.close();
 });
+
+test('an open report shows the overflowing bin as soon as the campus loads', async () => {
+  const { page, context } = await openAgent({ profile: profile() }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await page.locator('.campus-agent .scene-wrap[data-report="true"]').waitFor();
+  await context.close();
+});
+
+test('a campus with no open report shows no overflowing bin', async () => {
+  const quiet = { university: { id: 'u', name: 'U', bins: [] }, locations: [], faculties: [], events_7d: [], open_reports: [] };
+  const { page, context } = await openAgent({ profile: profile(), snapshot: quiet }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await page.waitForTimeout(500);
+  assert.equal(await page.locator('.campus-agent .scene-wrap').getAttribute('data-report'), 'false');
+  await context.close();
+});
+
+test('a quick second reply does not leave the report tag stuck', async () => {
+  let n = 0;
+  const agent = () => (++n === 1
+    ? [200, { reply: 'Reported.', conversationId: 'c1', actions: [{ kind: 'report', title: 'Report sent', location_id: 'l1' }] }]
+    : [200, { reply: 'Here you go.', conversationId: 'c1', actions: [{ kind: 'knowledge', title: 'Checked the guide' }] }]);
+  const { page, context } = await openAgent({ profile: profile(), agent }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await send(page, 'the bin is full');
+  await page.locator('.agent-tag.warn').waitFor({ state: 'visible' });
+  await send(page, 'thanks');
+  await page.getByText('Here you go.').waitFor();
+  await page.locator('.agent-tag.warn').waitFor({ state: 'hidden', timeout: 12000 });
+  await context.close();
+});

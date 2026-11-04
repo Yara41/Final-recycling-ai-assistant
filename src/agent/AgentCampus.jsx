@@ -27,35 +27,39 @@ export default function AgentCampus({ universityId, lang, actions, replay, onRep
     return () => window.removeEventListener('resize', on);
   }, []);
 
+  // Timers and the flight frame live in refs so a new batch (or a new scene api) never strands them.
+  const flightRaf = React.useRef(0);
+  const reportTimer = React.useRef(0);
+  React.useEffect(() => () => { cancelAnimationFrame(flightRaf.current); clearTimeout(reportTimer.current); }, []);
+
   React.useEffect(() => {
-    if (!api || !actions?.id || played.current.has(actions.id)) return undefined;
+    if (!api || !actions?.id || played.current.has(actions.id)) return;
     played.current.add(actions.id);
     const fx = effectsForCards(actions.cards, { plazaBins: api.binIds().map((id) => ({ id })) });
-    const timers = [];
-    let raf = 0;
     for (const e of fx) {
       if (e.type === 'flight') {
+        cancelAnimationFrame(flightRaf.current);
         const start = performance.now();
         const step = (now) => {
           const k = (now - start) / FLIGHT_MS;
-          if (k < 1) { api.flight(e.binId, k, FROM); raf = requestAnimationFrame(step); return; }
+          if (k < 1) { api.flight(e.binId, k, FROM); flightRaf.current = requestAnimationFrame(step); return; }
           api.flight(e.binId, null);
           api.lid(e.binId);
           if (plus.current) plus.current.textContent = `+${e.points}`;
           tags.current.plus = { binId: e.binId, until: performance.now() + PLUS_MS };
         };
-        raf = requestAnimationFrame(step);
+        flightRaf.current = requestAnimationFrame(step);
       } else if (e.type === 'report') {
         api.setReport(true);
         setReportView(true);
         tags.current.warn = true;
-        timers.push(setTimeout(() => { setReportView(false); tags.current.warn = false; }, REPORT_VIEW_MS));
+        clearTimeout(reportTimer.current);
+        reportTimer.current = setTimeout(() => { setReportView(false); tags.current.warn = false; }, REPORT_VIEW_MS);
       } else if (e.type === 'resolved') {
         api.setReport(false);
         tags.current.warn = false;
       }
     }
-    return () => { cancelAnimationFrame(raf); timers.forEach(clearTimeout); };
   }, [api, actions]);
 
   // Tags follow the camera, so they are placed every frame.
