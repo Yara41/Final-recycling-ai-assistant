@@ -1,0 +1,51 @@
+/* The sorting game: full screen over the campus bins. */
+.game { position: relative; flex: 1; min-height: calc(100svh - 64px); overflow: hidden; }
+.game-campus { position: absolute; inset: 0; }
+.game-drops { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.game-drop { position: absolute; left: 0; top: 0; width: 84px; height: 84px; border-radius: 50%; }
+.game-drop.on { box-shadow: 0 0 0 3px var(--lime), 0 0 30px 6px rgba(198, 243, 107, .55); }
+.game-tag { position: absolute; left: 0; top: 0; white-space: nowrap; padding: 5px 12px; border-radius: 12px; font: 700 15px var(--body); box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .5); }
+.game-tag.good { background: var(--lime); color: #10200a; font-size: 18px; direction: ltr; }
+.game-tag.bad { background: #ffd9cf; color: #7a1f0b; }
+
+.game-hud { position: absolute; z-index: 3; top: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+.game-hud span { white-space: nowrap; padding: 5px 12px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--card) 88%, transparent); color: var(--ink); font: 600 13px var(--body); box-shadow: var(--shadow); }
+.game-hud b { font-variant-numeric: tabular-nums; }
+
+.game-item {
+  position: absolute; z-index: 4; left: 50%; top: 30%; width: min(180px, 44vw); transform: translate(-50%, -50%);
+  touch-action: none; cursor: grab; user-select: none; background: #fff; color: #13284a; text-align: center;
+  border-radius: 22px; padding: 12px 12px 10px; box-shadow: 0 30px 50px -26px rgba(0, 0, 0, .6);
+  transition: left .45s cubic-bezier(.3, .7, .3, 1), top .45s cubic-bezier(.3, .7, .3, 1), transform .45s, opacity .45s;
+}
+.game-item.dragging { cursor: grabbing; }
+.game-item img { display: block; width: 100%; height: 120px; object-fit: contain; pointer-events: none; }
+.game-item b { display: block; margin-top: 6px; font: 700 15px var(--display); }
+
+.game-result {
+  position: absolute; z-index: 3; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  width: min(420px, calc(100% - 28px)); padding: 10px 14px; border-radius: 16px; background: color-mix(in srgb, var(--card) 95%, transparent);
+  color: var(--ink); text-align: center; font-size: 14px; box-shadow: var(--shadow); opacity: 0; visibility: hidden; transition: opacity .3s, visibility .3s;
+}
+.game-result.ok, .game-result.no { opacity: 1; visibility: visible; }
+.game-result[hidden] { display: none; }
+.game-result b { display: block; font: 700 15px var(--display); }
+.game-result.ok b { color: var(--leaf); }
+.game-result.no b { color: #c0362c; }
+
+.game-bins {
+  position: absolute; z-index: 3; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: min(560px, calc(100% - 28px));
+}
+.game-bins button { border: 0; border-radius: 16px; padding: 12px 4px; color: #fff; font: 600 13px var(--body); cursor: pointer; box-shadow: 0 12px 24px -16px rgba(0, 0, 0, .7); min-width: 0; overflow-wrap: anywhere; }
+.game-bins button:disabled { opacity: .8; cursor: default; }
+.game-bins button:active { transform: scale(.96); }
+
+.game-end {
+  position: absolute; z-index: 5; left: 50%; top: 44%; transform: translate(-50%, -50%); width: min(340px, calc(100% - 32px));
+  padding: 22px; border-radius: 24px; background: var(--card); color: var(--ink); text-align: center; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .6);
+}
+.game-end h2 { font: 700 30px var(--display); }
+.game-end p { margin: 6px 0 16px; color: var(--muted); }
+.game-end-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) { .game-item { transition: opacity .2s; } }

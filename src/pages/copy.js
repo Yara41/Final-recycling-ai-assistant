@@ -1,97 +1,57 @@
-// Text for the shell, Home and Learn pages, in Arabic and English.
+// Text for the site shell, the Home story and the sorting game, in Modern Standard Arabic and English.
+// Arabic copy must stay formal (no dialect): src/lib/__tests__/copy.test.js enforces it.
 const COPY = {
   ar: {
-    nav: { home: 'الرئيسية', agent: 'الإيجنت', learn: 'تعلّم' },
+    nav: { home: 'الرئيسية', agent: 'الوكيل', learn: 'لعبة الفرز' },
     langSwitch: 'English',
     home: {
-      kicker: 'إيجنت الاستدامة لجامعتك',
-      title: 'جامعتك حيّة، وكل عبوة تُحدث فرقاً',
-      sub: 'صوّر ما سترميه، فيعرف الإيجنت حاويته الصحيحة، ويسجّل أثرك، ويبلّغ فريق المرافق عن الحاويات الممتلئة بنفسه.',
-      start: 'تحدث مع الإيجنت',
-      how: 'كيف يعمل',
-      liveCaption: 'هذا حرم جامعة تجريبية يتغيّر مع كل عملية تدوير حقيقية.',
-      stats: { items: 'غرض مُدوَّر خلال 30 يوماً', correct: 'فرز صحيح', co2: 'كغ CO₂e موفّرة (تقديري)' },
-      stepsTitle: 'ثلاث خطوات، والإيجنت يتكفّل بالباقي',
-      steps: [
-        { title: 'صوّر', text: 'صورة واحدة للغرض. يتعرّف عليه الإيجنت ويخبرك بالحاوية الصحيحة حسب قواعد جامعتك.' },
-        { title: 'الإيجنت يتصرّف', text: 'يسجّل العملية بنقاطها، ويرسل بلاغاً إذا كانت الحاوية ممتلئة أو مفروزة خطأ.' },
-        { title: 'شوف أثرك', text: 'نقاطك وكليتك والأشجار التي تنمو حول مبناها على حرم جامعتك الحيّ.' },
+      // title: [before, accent, after]
+      screens: [
+        { kicker: 'وكيل ذكي للاستدامة في جامعتك', title: ['جامعتك ', 'تتنفّس', ' مع كل عبوة تُفرز بشكل صحيح'], text: 'التقط صورة، ويتولّى الوكيل الذكي الباقي.', cta: ['ابدأ مع الوكيل الذكي'], hint: 'مرّر للأسفل' },
+        { kicker: 'التقط صورة', title: ['صورة واحدة، ', 'والوكيل يعرف', ''], text: 'يحدّد لك الحاوية الصحيحة فوراً.' },
+        { kicker: 'تخلّص منها', title: ['في الحاوية الصحيحة، ', '+10', ''], text: 'نقاط تُضاف إليك وإلى كليتك.' },
+        { kicker: 'أبلِغ', title: ['الحاوية ممتلئة؟ ', 'وصل البلاغ', ''], text: 'يرسله الوكيل إلى فريق المرافق تلقائياً.' },
+        { kicker: 'للطلبة والموظفين وفريق المرافق ومكتب الاستدامة', title: ['ابدأ ', 'بأول عبوة', ''], cta: ['تحدّث مع الوكيل', 'العب لعبة الفرز'] },
       ],
-      roles: {
-        title: 'لكل من في الجامعة',
-        items: [
-          { who: 'الطلاب والموظفون', what: 'فرز صحيح ونقاط موثّقة بالصور.' },
-          { who: 'فريق المرافق', what: 'بلاغات مرتّبة حسب الأولوية، وفحص الحاويات بالصورة.' },
-          { who: 'مكتب الاستدامة', what: 'تقرير أسبوعي يكتبه الإيجنت بثلاث توصيات.' },
-        ],
-      },
-      research: {
-        title: 'مبني على بحث ميداني',
-        text: 'في دراسة على 165 شخصاً من جامعتين، كانت العلاقة بين نية إعادة التدوير والتدوير الفعلي أقوى بنحو الضعف عند من استخدموا الإيجنت أكثر.',
-        low: 'استخدام قليل',
-        high: 'استخدام كثير',
-        note: 'معامل الأثر (β) في نموذج الدراسة. علاقة ارتباط وليست سببية.',
-      },
-      footer: 'EcoWasteAI · إيجنت ذكاء اصطناعي لإعادة التدوير في الجامعات',
+      scan: 'عبوة بلاستيكية ← الحاوية الزرقاء',
+      footer: 'EcoWasteAI · وكيل ذكي لإعادة التدوير في الجامعات',
     },
-    learn: {
-      kicker: 'دليل الفرز',
-      title: 'افرز صح، من أول مرة',
-      sub: 'قواعد بسيطة تنطبق على أغلب الجامعات. الإيجنت يعرف قواعد جامعتك بالتحديد.',
-      rules: [
-        { title: 'نظيف وجاف', text: 'العبوات المشطوفة والورق الجاف فقط تُعاد تدويرها.' },
-        { title: 'الدهون تفسد الورق', text: 'علب البيتزا الدهنية والمناديل المستعملة للنفايات العامة.' },
-        { title: 'البطاريات منفصلة', text: 'البطاريات والإلكترونيات لنقاط التسليم الخاصة فقط.' },
-      ],
-      guide: 'افتح دليل الفرز المصوّر',
-      ask: 'اسأل الإيجنت عن أي غرض',
+    game: {
+      title: 'لعبة الفرز',
+      round: (n) => `الجولة ${n} من ٨`,
+      score: 'النتيجة',
+      right: 'إجابة صحيحة',
+      wrong: (bin) => `الحاوية الصحيحة: ${bin}`,
+      endTitle: (n) => `النتيجة ${n} من ٨`,
+      endText: 'اسحب الغرض إلى حاويته، أو اضغط اسم الحاوية.',
+      again: 'العب مرة أخرى',
+      ask: 'اسأل الوكيل',
     },
   },
   en: {
-    nav: { home: 'Home', agent: 'Agent', learn: 'Learn' },
+    nav: { home: 'Home', agent: 'Agent', learn: 'Sorting game' },
     langSwitch: 'العربية',
     home: {
-      kicker: "Your university's sustainability agent",
-      title: 'Your campus is alive. Every bottle counts.',
-      sub: 'Snap what you are throwing away. The agent knows the right bin, logs your impact and reports full bins to the facilities team by itself.',
-      start: 'Talk to the agent',
-      how: 'How it works',
-      liveCaption: 'A demo campus that changes with every real recycling action.',
-      stats: { items: 'items recycled in 30 days', correct: 'correctly sorted', co2: 'kg CO₂e saved (estimate)' },
-      stepsTitle: 'Three steps. The agent does the rest.',
-      steps: [
-        { title: 'Snap', text: "One photo of the item. The agent recognises it and tells you the right bin under your university's rules." },
-        { title: 'The agent acts', text: 'It logs the item with its points and files a report when a bin is full or mis-sorted.' },
-        { title: 'See your impact', text: 'Your points, your faculty, and the trees growing around its building on your living campus.' },
+      screens: [
+        { kicker: 'A smart sustainability agent for your university', title: ['Your campus ', 'breathes', ' with every item sorted right'], text: 'Take a photo. The agent does the rest.', cta: ['Start with the agent'], hint: 'Scroll down' },
+        { kicker: 'Take a photo', title: ['One photo, ', 'and the agent knows', ''], text: 'It tells you the right bin straight away.' },
+        { kicker: 'Throw it away', title: ['In the right bin, ', '+10', ''], text: 'Points for you and your faculty.' },
+        { kicker: 'Report', title: ['Bin full? ', 'Report sent', ''], text: 'The agent sends it to the facilities team by itself.' },
+        { kicker: 'For students, staff, facilities and the sustainability office', title: ['Start with ', 'your first item', ''], cta: ['Talk to the agent', 'Play the sorting game'] },
       ],
-      roles: {
-        title: 'For everyone on campus',
-        items: [
-          { who: 'Students and staff', what: 'Correct sorting and photo-verified points.' },
-          { who: 'Facilities team', what: 'Bin reports by priority and photo audits of bins.' },
-          { who: 'Sustainability office', what: 'A weekly report the agent writes, with three recommendations.' },
-        ],
-      },
-      research: {
-        title: 'Built on field research',
-        text: 'In a study of 165 people at two universities, the link between intending to recycle and actually recycling was about twice as strong for people who used the agent more.',
-        low: 'Light use',
-        high: 'Heavy use',
-        note: "Effect coefficient (β) in the study's model. An association, not proof of cause.",
-      },
-      footer: 'EcoWasteAI · an AI agent for university recycling',
+      scan: 'Plastic bottle → blue bin',
+      footer: 'EcoWasteAI · a smart recycling agent for universities',
     },
-    learn: {
-      kicker: 'Sorting guide',
-      title: 'Sort it right, the first time',
-      sub: "Simple rules that hold at most universities. The agent knows your university's exact rules.",
-      rules: [
-        { title: 'Clean and dry', text: 'Only rinsed containers and dry paper can be recycled.' },
-        { title: 'Grease ruins paper', text: 'Greasy pizza boxes and used tissues go to general waste.' },
-        { title: 'Batteries apart', text: 'Batteries and electronics go to special drop-off points only.' },
-      ],
-      guide: 'Open the illustrated sorting guide',
-      ask: 'Ask the agent about any item',
+    game: {
+      title: 'Sorting game',
+      round: (n) => `Round ${n} of 8`,
+      score: 'Score',
+      right: 'Correct',
+      wrong: (bin) => `Right bin: ${bin}`,
+      endTitle: (n) => `You scored ${n} of 8`,
+      endText: 'Drag the item onto its bin, or tap the bin name.',
+      again: 'Play again',
+      ask: 'Ask the agent',
     },
   },
 };

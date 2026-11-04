@@ -66,11 +66,12 @@ export const logRecycling: Tool = {
           detail: !r.correct_bin
             ? t(ctx, `الحاوية الصحيحة: ${right}`, `Right bin: ${right}`)
             : r.verification !== "photo"
-            ? t(ctx, `سجّلتها كمبلَّغ عنها بدون نقاط. صوّر الغرض المرة الجاية لتحصل على النقاط 📸`, `Recorded as self-reported, no points. Send a photo of the item next time to earn points 📸`)
+            ? t(ctx, `سجّلتها دون نقاط لأنها غير موثّقة بصورة. التقط صورة للغرض في المرة القادمة لتحصل على النقاط 📸`, `Recorded as self-reported, no points. Send a photo of the item next time to earn points 📸`)
             : r.capped
             ? t(ctx, `فرز صحيح ✔ وصلت للحد اليومي للنقاط`, `Correctly sorted ✔ daily points limit reached`)
             : t(ctx, `فرز صحيح ✔ موثّق بصورة • وفّرت تقريباً ${Number(r.est_co2e_kg).toFixed(2)} كغ CO₂e (تقديري)`, `Correctly sorted ✔ photo-verified • about ${Number(r.est_co2e_kg).toFixed(2)} kg CO₂e saved (estimate)`),
           points: r.points,
+          bin,
           location_id: location === null ? null : String(location),
         },
       };

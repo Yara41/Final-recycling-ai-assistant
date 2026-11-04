@@ -32,7 +32,16 @@ const json = (route, body, status = 200) =>
 
 // backend: { profile: object|null, agent: (body) => [status, json], stats, insights, reports, impact, board }
 export const SNAPSHOT = {
-  university: { id: UNI.id, name: UNI.name },
+  university: {
+    id: UNI.id, name: UNI.name,
+    bins: [
+      { id: 'general', label_ar: 'نفايات عامة', label_en: 'General waste', color: '#6b7280', accepts: ['general', 'organic'] },
+      { id: 'plastic', label_ar: 'بلاستيك', label_en: 'Plastic', color: '#2563eb', accepts: ['plastic'] },
+      { id: 'paper', label_ar: 'ورق وكرتون', label_en: 'Paper & cardboard', color: '#16a34a', accepts: ['paper'] },
+      { id: 'metal', label_ar: 'معادن', label_en: 'Metals', color: '#ca8a04', accepts: ['metal'] },
+      { id: 'drop_off', label_ar: 'نقطة تسليم خاصة', label_en: 'Special drop-off point', color: '#dc2626', accepts: ['glass', 'hazardous'] },
+    ],
+  },
   locations: [
     { id: 'l1', name: 'Engineering cafeteria', kind: 'bin_station', faculty: 'Engineering', lat: 25.1012, lng: 55.1621 },
     { id: 'l2', name: 'Business lobby', kind: 'bin_station', faculty: 'Business', lat: 25.1021, lng: 55.161 },
@@ -51,17 +60,18 @@ export const SNAPSHOT = {
   open_reports: [{ location_id: 'l1', issue: 'contaminated', contamination_pct: 45 }],
 };
 
-export async function openApp(browser, backend, { speech = true, lang = 'en', reducedMotion = 'reduce', query = '' } = {}) {
-  const context = await browser.newContext({ reducedMotion });
+export async function openApp(browser, backend, { speech = true, lang = 'en', reducedMotion = 'reduce', query = '', viewport, snap = false } = {}) {
+  const context = await browser.newContext({ reducedMotion, ...(viewport ? { viewport } : {}) });
   const page = await context.newPage();
   const state = { profile: backend.profile ?? null, agentCalls: [], rpc: [] };
-  await page.addInitScript(({ speech, lang }) => {
+  await page.addInitScript(({ speech, lang, snap }) => {
     localStorage.setItem('eco_lang', lang);
+    if (snap) window.__snap = 1;
     if (!speech) { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; }
     else if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
       window.webkitSpeechRecognition = class { start() {} stop() {} };
     }
-  }, { speech, lang });
+  }, { speech, lang, snap });
 
   await page.route('**/auth/v1/**', (route) => json(route, {
     access_token: 'tok', refresh_token: 'ref', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600,

@@ -8,7 +8,7 @@ after(async () => { await browser?.close(); server?.kill(); });
 
 async function openAgent(backend, opts) {
   const app = await openApp(browser, backend, opts);
-  await app.page.getByRole('button', { name: /talk to the agent/i }).first().click();
+  await app.page.getByRole('button', { name: /start with the agent/i }).first().click();
   return app;
 }
 
@@ -83,7 +83,7 @@ test('a photo is resized and sent as JPEG', async () => {
 test('the "agent is working" text stays on one line (Arabic, RTL)', async () => {
   const { page, context } = await openApp(browser, { profile: profile() }, { lang: 'ar' });
   await page.setViewportSize({ width: 1530, height: 800 });
-  await page.getByRole('button', { name: /تحدث مع الإيجنت/ }).first().click();
+  await page.getByRole('button', { name: /ابدأ مع الوكيل/ }).first().click();
   await page.route('**/functions/v1/agent', async (route) => {
     await new Promise((r) => setTimeout(r, 1500));
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ reply: 'تمام', actions: [], conversationId: 'c1' }) });
@@ -106,36 +106,7 @@ test('My impact shows how many items were verified by photo', async () => {
   await context.close();
 });
 
-test('logging an item flies it into the campus and shows +10', async () => {
-  const { page, context } = await openAgent({
-    profile: profile(),
-    agent: () => [200, { reply: 'Nice!', conversationId: 'c1', actions: [
-      { kind: 'logged', title: 'Logged 1 × Plastic bottle', detail: 'Correctly sorted', points: 10, location_id: 'l1' },
-    ] }],
-  });
-  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
-  await page.getByPlaceholder(/message/i).fill('bottle');
-  await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await page.locator('.campus-agent .flight').waitFor();
-  assert.equal(await page.locator('.campus-agent .flight .flight-points').textContent(), '+10');
-  await page.locator('.campus-agent .flight').waitFor({ state: 'detached', timeout: 5000 });
-  await context.close();
-});
 
-test('a report from the agent puts a warning pin on the campus', async () => {
-  const { page, context } = await openAgent({
-    profile: profile(),
-    snapshot: { university: {}, locations: [{ id: 'l2', name: 'Lobby', kind: 'bin_station', faculty: 'Business', lat: null, lng: null }],
-      faculties: [], events_7d: [], open_reports: [] },
-    agent: () => [200, { reply: 'Reported.', conversationId: 'c1', actions: [{ kind: 'report', title: 'Report sent to facilities', location_id: 'l2' }] }],
-  });
-  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
-  assert.equal(await page.locator('.campus-agent .pin.warn').count(), 0);
-  await page.getByPlaceholder(/message/i).fill('the lobby bin is full');
-  await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await page.locator('.campus-agent .pin.warn').waitFor();
-  await context.close();
-});
 
 test('the chat sheet expands to show history and collapses back', async () => {
   const { page, context } = await openAgent({
@@ -181,7 +152,7 @@ test('on a 360px phone in Arabic the expanded chat never scrolls sideways', asyn
     agent: () => [200, { reply: long, conversationId: 'c1', actions: [{ kind: 'logged', title: 'سجّلت 1 × عبوة بلاستيك طويلة الاسم جداً جداً', detail: long.slice(0, 200), points: 10 }] }],
   }, { lang: 'ar' });
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.getByRole('button', { name: /تحدث مع الإيجنت/ }).first().click();
+  await page.getByRole('button', { name: /ابدأ مع الوكيل/ }).first().click();
   await page.getByPlaceholder(/رسالتك/).fill('رميت عبوة');
   await page.getByRole('button', { name: 'إرسال', exact: true }).click();
   await page.locator('.action-card').waitFor();
@@ -193,9 +164,10 @@ test('on a 360px phone in Arabic the expanded chat never scrolls sideways', asyn
 
 test('"Your week" replays the last 7 days on the campus and sums them up', async () => {
   const { page, context } = await openAgent({ profile: profile() });
-  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
+  await page.locator('.campus-agent').first().waitFor();
   await page.clock.install();
-  await page.getByRole('button', { name: 'Your week' }).click();
+  await page.getByRole('tab', { name: 'My impact' }).click();
+  await page.getByRole('button', { name: 'Your week on the campus' }).click();
   const replay = page.getByRole('dialog', { name: 'Your week' });
   await replay.waitFor();
   await page.clock.runFor(1000);
@@ -214,8 +186,80 @@ test('"Your week" with no activity says so', async () => {
     profile: profile(),
     snapshot: { university: {}, locations: [{ id: 'l1', name: 'A', kind: 'bin_station', faculty: 'Engineering', lat: null, lng: null }], faculties: [], events_7d: [], open_reports: [] },
   });
-  await page.locator('.campus-agent .campus-fallback .building').first().waitFor();
-  await page.getByRole('button', { name: 'Your week' }).click();
+  await page.getByRole('tab', { name: 'My impact' }).click();
+  await page.getByRole('button', { name: 'Your week on the campus' }).click();
   await page.getByText('No activity this week yet').waitFor();
+  await context.close();
+});
+
+const live = { query: '?3d=1', snap: true, reducedMotion: 'no-preference' };
+const reply = (actions) => () => [200, { reply: 'Done.', conversationId: 'c1', actions }];
+async function send(page, text) {
+  await page.getByPlaceholder(/message/i).fill(text);
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+}
+
+test('a logged card flies the item into its bin and shows +10', async () => {
+  const { page, context } = await openAgent({ profile: profile(), agent: reply([{ kind: 'logged', title: 'Logged 1 × Bottle', bin: 'plastic', points: 10 }]) }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await send(page, 'bottle');
+  await page.locator('.agent-tag.plus').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.agent-tag.plus').textContent(), '+10');
+  await context.close();
+});
+
+test('a logged card for an unknown bin still shows +10', async () => {
+  const { page, context } = await openAgent({ profile: profile(), agent: reply([{ kind: 'logged', title: 'Logged', bin: 'glass', points: 10 }]) }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await send(page, 'jar');
+  await page.locator('.agent-tag.plus').waitFor({ state: 'visible' });
+  await context.close();
+});
+
+test('a report card turns the camera to the full bin and tags it', async () => {
+  const { page, context } = await openAgent({ profile: profile(), agent: reply([{ kind: 'report', title: 'Report sent to facilities', location_id: 'l1' }]) }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await send(page, 'the bin is full');
+  await page.locator('.agent-tag.warn').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.agent-tag.warn').textContent(), 'Report sent ✓');
+  await context.close();
+});
+
+test('the camera button opens the photo picker', async () => {
+  const { page, context } = await openAgent({ profile: profile() });
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Take a photo', exact: true }).click();
+  await chooser;
+  await context.close();
+});
+
+test('an open report shows the overflowing bin as soon as the campus loads', async () => {
+  const { page, context } = await openAgent({ profile: profile() }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await page.locator('.campus-agent .scene-wrap[data-report="true"]').waitFor();
+  await context.close();
+});
+
+test('a campus with no open report shows no overflowing bin', async () => {
+  const quiet = { university: { id: 'u', name: 'U', bins: [] }, locations: [], faculties: [], events_7d: [], open_reports: [] };
+  const { page, context } = await openAgent({ profile: profile(), snapshot: quiet }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await page.waitForTimeout(500);
+  assert.equal(await page.locator('.campus-agent .scene-wrap').getAttribute('data-report'), 'false');
+  await context.close();
+});
+
+test('a quick second reply does not leave the report tag stuck', async () => {
+  let n = 0;
+  const agent = () => (++n === 1
+    ? [200, { reply: 'Reported.', conversationId: 'c1', actions: [{ kind: 'report', title: 'Report sent', location_id: 'l1' }] }]
+    : [200, { reply: 'Here you go.', conversationId: 'c1', actions: [{ kind: 'knowledge', title: 'Checked the guide' }] }]);
+  const { page, context } = await openAgent({ profile: profile(), agent }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await send(page, 'the bin is full');
+  await page.locator('.agent-tag.warn').waitFor({ state: 'visible' });
+  await send(page, 'thanks');
+  await page.getByText('Here you go.').waitFor();
+  await page.locator('.agent-tag.warn').waitFor({ state: 'hidden', timeout: 12000 });
   await context.close();
 });

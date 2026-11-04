@@ -167,7 +167,6 @@ export default function AgentChat({ profile, lang, dir, prompt = '', onNeedsOnbo
                 {suggestionsFor(s, profile.role).map((q) => (
                   <button key={q} type="button" onClick={() => send({ text: q })}>{q}</button>
                 ))}
-                <button type="button" onClick={() => fileRef.current?.click()}><Camera size={14} /> {s.photo}</button>
               </div>
             </div>
           ) : (
@@ -205,13 +204,15 @@ export default function AgentChat({ profile, lang, dir, prompt = '', onNeedsOnbo
           )}
         </div>
 
-        <form className="composer" onSubmit={(e) => { e.preventDefault(); send({ text: input }); }}>
-          <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={s.placeholder} disabled={busy} maxLength={1000} />
-          <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
-          <VoiceButton lang={lang} label={s.voice} listeningLabel={s.listening} disabled={busy} onText={(t) => send({ text: t })} />
-          <button type="button" className="composer-btn" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={s.photo}><Camera size={19} /></button>
-          <button type="submit" className="composer-send" aria-label={s.send} disabled={busy || !input.trim()}><ArrowUp size={19} /></button>
-        </form>
+        <div className="composer-row">
+          <button type="button" className="shoot" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={s.photo}><Camera size={22} /></button>
+          <form className="composer" onSubmit={(e) => { e.preventDefault(); send({ text: input }); }}>
+            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={s.placeholder} disabled={busy} maxLength={1000} aria-label={s.placeholder} />
+            <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
+            <VoiceButton lang={lang} label={s.voice} listeningLabel={s.listening} disabled={busy} onText={(t) => send({ text: t })} />
+            <button type="submit" className="composer-send" aria-label={s.send} disabled={busy || !input.trim()}><ArrowUp size={19} /></button>
+          </form>
+        </div>
       </section>
     </>
   );

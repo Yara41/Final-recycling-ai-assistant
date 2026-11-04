@@ -93,6 +93,7 @@ Deno.test("log_recycling returns a logged card with points from the database", a
   assert.equal(r.card?.kind, "logged");
   assert.equal(r.card?.points, 20);
   assert.equal(r.card?.location_id, LOC); // the campus animates this bin's building
+  assert.equal(r.card?.bin, "plastic"); // the campus flies the item into this bin
   assert.match(calls[0].url, /rpc\/log_recycling_event$/);
   assert.deepEqual(calls[0].body, {
     p_user: "u1", p_item: "Bottle", p_category: "plastic", p_bin: "plastic", p_quantity: 2, p_location: LOC, p_source: "chat",

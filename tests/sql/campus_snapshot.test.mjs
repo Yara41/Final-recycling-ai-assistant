@@ -67,3 +67,11 @@ test('faculties sums match recycling_events for 30 days', async () => {
     where faculty = 'Engineering' and created_at > now() - interval '30 days'`));
   assert.deepEqual([eng.points_30d, eng.items_30d, eng.wrong_items_30d], [truth.p, truth.q, truth.w]);
 });
+
+test('the snapshot includes the university bins and still no user ids', async () => {
+  const db = await freshDb();
+  const s = await asAnon(db, (tx) => snap(tx, DEMO_UNI));
+  assert.equal(s.university.bins.length, 5);
+  assert.deepEqual(s.university.bins.map((b) => b.id), ['general', 'plastic', 'paper', 'metal', 'drop_off']);
+  assert.equal(JSON.stringify(s).includes('user_id'), false);
+});

@@ -36,6 +36,8 @@ export type ActionCard = {
   title: string;
   detail?: string;
   points?: number;
+  /** The bin the item went into (university bin id), so the campus can animate it. */
+  bin?: string;
   /** The bin station this action happened at, so the campus can animate it. */
   location_id?: string | null;
   data?: unknown;

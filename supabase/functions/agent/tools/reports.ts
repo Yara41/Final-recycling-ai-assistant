@@ -130,7 +130,7 @@ List the visible items, mark belongs=false for items that do not belong in this 
         data: { items, contamination_pct: pct, summary, report },
         card: {
           kind: "audit",
-          title: t(ctx, `فحص الحاوية: ${pct}% مفروز غلط`, `Bin audit: ${pct}% wrong items`),
+          title: t(ctx, `فحص الحاوية: ${pct}% مفروزة بشكل خاطئ`, `Bin audit: ${pct}% wrong items`),
           detail: summary + reported,
           location_id: report && location ? String(location) : null,
           data: { contamination_pct: pct, items },
@@ -159,7 +159,7 @@ export const listOpenReports: Tool = {
       return {
         ok: true,
         data: ranked,
-        card: { kind: "reports", title: t(ctx, `${ranked.length} بلاغ مفتوح`, `${ranked.length} open reports`), data: ranked },
+        card: { kind: "reports", title: t(ctx, `البلاغات المفتوحة: ${ranked.length}`, `${ranked.length} open reports`), data: ranked },
       };
     }),
 };

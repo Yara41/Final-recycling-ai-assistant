@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Leaf, PlayCircle } from 'lucide-react';
+import { Leaf } from 'lucide-react';
 import { ensureSession, getProfile } from '../lib/session.js';
 import { getMyImpact } from '../lib/dashboard.js';
 import AdminPage from './AdminPage.jsx';
 import AgentChat from './AgentChat.jsx';
-import Campus from '../campus/Campus.jsx';
+import AgentCampus from './AgentCampus.jsx';
 import FacilitiesPage from './FacilitiesPage.jsx';
 import ImpactPage from './ImpactPage.jsx';
 import Onboarding from './Onboarding.jsx';
@@ -94,9 +94,6 @@ export default function AgentPage({ lang, dir, prompt = '' }) {
             </button>
           ))}
         </nav>
-        <button type="button" className="week-btn" onClick={() => { setTab('chat'); setReplay(true); }}>
-          <PlayCircle size={16} aria-hidden="true" /> {s.yourWeek}
-        </button>
         <span className="points-chip" title={s.myPoints}>
           <Leaf size={15} aria-hidden="true" />
           <strong>{points ?? '–'}</strong>
@@ -105,13 +102,12 @@ export default function AgentPage({ lang, dir, prompt = '' }) {
       </div>
       {tab === 'chat' ? (
         <div className={`agent-scene ${replay ? 'replaying' : ''}`}>
-          <Campus mode="agent" universityId={state.profile.university_id} lang={lang} actions={actions}
-            profileFaculty={state.profile.faculty} replay={replay} onReplayEnd={endReplay} />
+          <AgentCampus universityId={state.profile.university_id} lang={lang} actions={actions} replay={replay} onReplayEnd={endReplay} />
           <AgentChat key={chat.key} profile={state.profile} lang={lang} dir={dir} prompt={chat.prompt} onNeedsOnboarding={toOnboarding} onActions={onActions} />
         </div>
       ) : (
         <div className="agent-page">
-          {tab === 'impact' && <ImpactPage profile={state.profile} lang={lang} />}
+          {tab === 'impact' && <ImpactPage profile={state.profile} lang={lang} onWeek={() => { setTab('chat'); setReplay(true); }} />}
           {tab === 'reports' && <FacilitiesPage lang={lang} />}
           {tab === 'campus' && <AdminPage profile={state.profile} lang={lang} onAsk={askAgent} />}
         </div>
