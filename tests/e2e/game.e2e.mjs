@@ -84,3 +84,14 @@ test('the game fits a 360px phone without sideways scroll', async () => {
   assert.ok(box.x >= 0 && box.x + box.width <= 360);
   await context.close();
 });
+
+test('the end screen shows no leftover result box', async () => {
+  const { page, context } = await openGame('en');
+  for (let i = 0; i < 8; i++) {
+    await waitRound(page, i);
+    await page.locator('.game-bins button').first().click();
+  }
+  await page.locator('.game-end').waitFor({ timeout: 20000 });
+  assert.equal(await page.locator('.game-result').isVisible(), false);
+  await context.close();
+});

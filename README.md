@@ -13,15 +13,17 @@ for any university.
 - **Database** (`supabase/migrations`): multi-university tenants, roles with invite codes, recorded
   recycling behaviour, bin reports, agent memory and an audit trail of agent actions, all behind
   Row Level Security. Points can only be written by the agent (service role), never by the browser.
-- **Living Campus** (`src/campus`): each university is drawn as a 3D campus generated from its own
-  data (`campus_snapshot`): one building per faculty, trees that grow with verified points, litter where
-  sorting goes wrong, pins on reported bins, and Eco, the agent's character. Agent actions animate it
-  (items fly into their building, reports pin the bin) and "Your week" replays the last 7 days.
-  three.js is lazy-loaded; low-end or reduced-motion devices get an illustrated SVG version
-  (`?3d=1` / `?3d=0` force either).
-- **Website** (`src/pages`, `src/agent`): landing page with the live demo campus, onboarding, the agent
-  chat as a sheet over the campus (photo and voice input, action cards), My impact, facilities reports
-  and the campus dashboard.
+- **Living campus** (`src/campus`): a realistic limestone campus (arcades, cypress and olive trees) built
+  procedurally with three.js from each university's data (`campus_snapshot`): its most active faculties
+  name the halls and its own bins stand in the plaza. The scene follows the visitor's local time (dawn, day,
+  sunset, night; `?sky=` fixes it), and the page theme follows the scene. Agent actions animate it (items
+  fly into their bin, reports turn the camera to the full bin). three.js is lazy-loaded; weak or
+  reduced-motion devices get pre-rendered stills (`scripts/render-stills.mjs`; `?3d=1` forces the scene).
+- **Website** (`src/pages`, `src/agent`): a five-screen landing story over the demo campus, the agent chat
+  as a sheet over the campus (photo and voice input, action cards), My impact with "Your week", facilities
+  reports, the campus dashboard, and an eight-round sorting game in front of the plaza bins.
+- **Language:** all Arabic copy is Modern Standard Arabic, checked by `src/lib/__tests__/copy.test.js`;
+  the agent always replies in Modern Standard Arabic.
 
 Setup, in Arabic, step by step and free: **[docs/AGENT_SETUP.md](docs/AGENT_SETUP.md)**.
 Design and plan: `docs/superpowers/specs/` and `docs/superpowers/plans/`.

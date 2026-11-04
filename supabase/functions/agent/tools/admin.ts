@@ -82,7 +82,7 @@ export const analyzeTrends: Tool = {
         data: { ...analysis, stats },
         card: {
           kind: "insight",
-          title: t(ctx, "تحليل الإيجنت", "Agent analysis"),
+          title: t(ctx, "تحليل الوكيل", "Agent analysis"),
           detail: analysis.summary,
           data: analysis,
         },

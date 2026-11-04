@@ -125,7 +125,7 @@ export default function SortingGame({ lang, onAsk }) {
         </div>
       )}
 
-      <div className={`game-result ${result ? (result.correct ? 'ok' : 'no') : ''}`} role="status" aria-live="polite">
+      <div className={`game-result ${result ? (result.correct ? 'ok' : 'no') : ''}`} role="status" aria-live="polite" hidden={over}>
         {result && (
           <>
             <b>{result.correct ? c.right : c.wrong(binName(result.rightBin))}</b>

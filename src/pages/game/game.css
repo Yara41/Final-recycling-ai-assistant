@@ -25,9 +25,10 @@
 .game-result {
   position: absolute; z-index: 3; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
   width: min(420px, calc(100% - 28px)); padding: 10px 14px; border-radius: 16px; background: color-mix(in srgb, var(--card) 95%, transparent);
-  color: var(--ink); text-align: center; font-size: 14px; box-shadow: var(--shadow); opacity: 0; transition: opacity .3s;
+  color: var(--ink); text-align: center; font-size: 14px; box-shadow: var(--shadow); opacity: 0; visibility: hidden; transition: opacity .3s, visibility .3s;
 }
-.game-result.ok, .game-result.no { opacity: 1; }
+.game-result.ok, .game-result.no { opacity: 1; visibility: visible; }
+.game-result[hidden] { display: none; }
 .game-result b { display: block; font: 700 15px var(--display); }
 .game-result.ok b { color: var(--leaf); }
 .game-result.no b { color: #c0362c; }
