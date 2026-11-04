@@ -106,36 +106,7 @@ test('My impact shows how many items were verified by photo', async () => {
   await context.close();
 });
 
-test.skip('logging an item flies it into the campus and shows +10 (rebuilt on the new scene in Task 7)', async () => {
-  const { page, context } = await openAgent({
-    profile: profile(),
-    agent: () => [200, { reply: 'Nice!', conversationId: 'c1', actions: [
-      { kind: 'logged', title: 'Logged 1 × Plastic bottle', detail: 'Correctly sorted', points: 10, location_id: 'l1' },
-    ] }],
-  });
-  await page.locator('.campus-agent').first().waitFor();
-  await page.getByPlaceholder(/message/i).fill('bottle');
-  await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await page.locator('.campus-agent .flight').waitFor();
-  assert.equal(await page.locator('.campus-agent .flight .flight-points').textContent(), '+10');
-  await page.locator('.campus-agent .flight').waitFor({ state: 'detached', timeout: 5000 });
-  await context.close();
-});
 
-test.skip('a report from the agent puts a warning pin on the campus (rebuilt on the new scene in Task 7)', async () => {
-  const { page, context } = await openAgent({
-    profile: profile(),
-    snapshot: { university: {}, locations: [{ id: 'l2', name: 'Lobby', kind: 'bin_station', faculty: 'Business', lat: null, lng: null }],
-      faculties: [], events_7d: [], open_reports: [] },
-    agent: () => [200, { reply: 'Reported.', conversationId: 'c1', actions: [{ kind: 'report', title: 'Report sent to facilities', location_id: 'l2' }] }],
-  });
-  await page.locator('.campus-agent').first().waitFor();
-  assert.equal(await page.locator('.campus-agent .pin.warn').count(), 0);
-  await page.getByPlaceholder(/message/i).fill('the lobby bin is full');
-  await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await page.locator('.campus-agent .pin.warn').waitFor();
-  await context.close();
-});
 
 test('the chat sheet expands to show history and collapses back', async () => {
   const { page, context } = await openAgent({
@@ -195,7 +166,8 @@ test('"Your week" replays the last 7 days on the campus and sums them up', async
   const { page, context } = await openAgent({ profile: profile() });
   await page.locator('.campus-agent').first().waitFor();
   await page.clock.install();
-  await page.getByRole('button', { name: 'Your week' }).click();
+  await page.getByRole('tab', { name: 'My impact' }).click();
+  await page.getByRole('button', { name: 'Your week on the campus' }).click();
   const replay = page.getByRole('dialog', { name: 'Your week' });
   await replay.waitFor();
   await page.clock.runFor(1000);
@@ -214,8 +186,49 @@ test('"Your week" with no activity says so', async () => {
     profile: profile(),
     snapshot: { university: {}, locations: [{ id: 'l1', name: 'A', kind: 'bin_station', faculty: 'Engineering', lat: null, lng: null }], faculties: [], events_7d: [], open_reports: [] },
   });
-  await page.locator('.campus-agent').first().waitFor();
-  await page.getByRole('button', { name: 'Your week' }).click();
+  await page.getByRole('tab', { name: 'My impact' }).click();
+  await page.getByRole('button', { name: 'Your week on the campus' }).click();
   await page.getByText('No activity this week yet').waitFor();
+  await context.close();
+});
+
+const live = { query: '?3d=1', snap: true, reducedMotion: 'no-preference' };
+const reply = (actions) => () => [200, { reply: 'Done.', conversationId: 'c1', actions }];
+async function send(page, text) {
+  await page.getByPlaceholder(/message/i).fill(text);
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+}
+
+test('a logged card flies the item into its bin and shows +10', async () => {
+  const { page, context } = await openAgent({ profile: profile(), agent: reply([{ kind: 'logged', title: 'Logged 1 × Bottle', bin: 'plastic', points: 10 }]) }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await send(page, 'bottle');
+  await page.locator('.agent-tag.plus').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.agent-tag.plus').textContent(), '+10');
+  await context.close();
+});
+
+test('a logged card for an unknown bin still shows +10', async () => {
+  const { page, context } = await openAgent({ profile: profile(), agent: reply([{ kind: 'logged', title: 'Logged', bin: 'glass', points: 10 }]) }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await send(page, 'jar');
+  await page.locator('.agent-tag.plus').waitFor({ state: 'visible' });
+  await context.close();
+});
+
+test('a report card turns the camera to the full bin and tags it', async () => {
+  const { page, context } = await openAgent({ profile: profile(), agent: reply([{ kind: 'report', title: 'Report sent to facilities', location_id: 'l1' }]) }, live);
+  await page.locator('.campus-agent .scene-wrap[data-ready="true"]').waitFor({ timeout: 60000 });
+  await send(page, 'the bin is full');
+  await page.locator('.agent-tag.warn').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.agent-tag.warn').textContent(), 'Report sent ✓');
+  await context.close();
+});
+
+test('the camera button opens the photo picker', async () => {
+  const { page, context } = await openAgent({ profile: profile() });
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Take a photo', exact: true }).click();
+  await chooser;
   await context.close();
 });

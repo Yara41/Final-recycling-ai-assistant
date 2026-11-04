@@ -24,12 +24,7 @@
 .seg button.active { background: var(--ink); color: var(--lime); }
 .seg-small { align-self: flex-start; }
 .seg-small button { padding: 6px 12px; font-size: 13px; }
-.week-btn {
-  margin-inline-start: auto; flex: none; display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px; border-radius: var(--r-pill); border: 1.5px solid var(--line); background: var(--card);
-  color: var(--ink); font: 600 13px var(--display); cursor: pointer; white-space: nowrap;
-}
-.points-chip { flex: none; display: inline-flex; align-items: center; gap: 6px;
+.points-chip { margin-inline-start: auto; flex: none; display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 12px; border-radius: var(--r-pill); background: var(--lime); color: #0b3b2c;
   font-family: var(--display); font-size: 13px;
 }
@@ -49,9 +44,9 @@
 }
 .chat-sheet.expanded { max-height: calc(100% - 12px); height: calc(100% - 12px); }
 @media (min-width: 900px) {
-  .agent-scene > .campus-agent { inset: 0; inset-inline-start: 480px; }
+  .agent-scene > .campus-agent { inset: 0; }
   .chat-sheet {
-    inset-inline: auto 24px; inset-inline-start: 24px; inset-inline-end: auto; bottom: 24px;
+    left: auto; right: 24px; bottom: 24px; /* always on the right: the camera frames the bins on the left */
     width: 440px; max-height: 56%; border-radius: 24px; box-shadow: var(--shadow);
   }
   .chat-sheet.expanded { max-height: calc(100% - 48px); height: calc(100% - 48px); }
@@ -108,9 +103,15 @@
 @keyframes dot { 50% { transform: translateY(-4px); opacity: 0.5; } }
 
 .composer {
-  display: flex; align-items: center; gap: 6px; margin: 4px 12px max(12px, env(safe-area-inset-bottom, 0px));
-  padding: 6px; border-radius: var(--r-pill); background: var(--paper); border: 1.5px solid var(--line);
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px;
+  padding: 5px; border-radius: var(--r-pill); background: var(--paper); border: 1.5px solid var(--line);
 }
+.composer-row { display: flex; align-items: center; gap: 8px; margin: 4px 12px max(12px, env(safe-area-inset-bottom, 0px)); }
+.shoot {
+  flex: none; width: 52px; height: 52px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+  background: var(--lime); color: #10200a; box-shadow: 0 10px 22px -12px rgba(80, 120, 20, .9);
+}
+.shoot:disabled { opacity: .5; cursor: not-allowed; }
 .composer:focus-within { border-color: var(--leaf); }
 .composer input[type="text"] {
   flex: 1; min-width: 0; border: 0; background: none; outline: none; padding: 8px 10px;
@@ -242,3 +243,13 @@
 @media (prefers-color-scheme: dark) {
   .pct-badge { color: var(--amber); }
 }
+
+/* tags above the campus (+points, report sent) */
+.agent-tags { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.agent-tag { position: absolute; left: 0; top: 0; white-space: nowrap; padding: 5px 12px; border-radius: 12px; font: 700 14px var(--body); box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .5); }
+.agent-tag.plus { background: var(--lime); color: #10200a; font-size: 18px; direction: ltr; }
+.agent-tag.warn { background: var(--amber); color: #2a1a00; }
+.dash-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+:root.dark .seg button.active { background: var(--lime); color: #10200a; }
+:root.dark .composer-send, :root.dark .onboarding-primary, :root.dark .dash-btn { background: var(--lime); color: #10200a; }

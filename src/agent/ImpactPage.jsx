@@ -3,7 +3,7 @@ import { getLeaderboard, getMyImpact } from '../lib/dashboard.js';
 import { strings } from './strings.js';
 
 // The user's own recorded behaviour, plus the faculty ranking at their university.
-export default function ImpactPage({ profile, lang }) {
+export default function ImpactPage({ profile, lang, onWeek }) {
   const s = strings(lang);
   const [impact, setImpact] = useState(null);
   const [board, setBoard] = useState([]);
@@ -21,7 +21,10 @@ export default function ImpactPage({ profile, lang }) {
 
   return (
     <div className="dash">
-      <h1>{s.tabImpact}</h1>
+      <div className="dash-head">
+        <h1>{s.tabImpact}</h1>
+        {onWeek && <button type="button" className="btn btn-primary week-btn" onClick={onWeek}>{s.weekOnCampus}</button>}
+      </div>
       <div className="dash-grid">
         <div className="stat-tile"><span>{s.points}</span><strong>{d.points}</strong></div>
         <div className="stat-tile"><span>{s.items}</span><strong>{d.items}</strong></div>

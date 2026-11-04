@@ -70,6 +70,7 @@ a { color: var(--leaf); }
 }
 .btn:active { transform: scale(0.97); }
 .btn-primary { background: var(--ink); color: var(--lime); }
+:root.dark .btn-primary { background: var(--lime); color: #10200a; }
 .btn-ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
 .btn-lime { background: var(--lime); color: #0b3b2c; }
 

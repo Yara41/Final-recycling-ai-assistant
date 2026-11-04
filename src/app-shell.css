@@ -44,3 +44,4 @@
   .topbar nav button { padding: 6px 8px; font-size: 12.5px; }
   .clock-btn { padding: 6px 8px; }
 }
+:root.dark .topbar nav button.active { background: var(--lime); color: #10200a; }
