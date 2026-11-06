@@ -35,6 +35,8 @@ export default function AgentChat({ profile, lang, dir, prompt = '', onNeedsOnbo
   }, []);
 
   useEffect(() => {
+    // The welcome screen stays at its top; only a conversation follows its newest message.
+    if (messages.length === 0) { boxRef.current?.scrollTo({ top: 0 }); return; }
     boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, busy, expanded]);
 

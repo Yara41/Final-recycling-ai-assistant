@@ -43,7 +43,7 @@ class SceneBoundary extends React.Component {
 
 // The university's campus, full-bleed behind a page. bins="plaza" shows the university's own bins,
 // bins="game" the four standard bins of the sorting game. Pages drive it through onApi.
-export default function Campus({ universityId, lang = 'ar', mode = 'home', shot, bins = 'plaza', onApi, onSnapshot, replay = false, onReplayEnd, children }) {
+export default function Campus({ universityId, lang = 'ar', mode = 'home', shot, track, bins = 'plaza', onApi, onSnapshot, replay = false, onReplayEnd, children }) {
   const t = text(lang);
   const { sky, phase } = useSky();
   const layout = useLayout();
@@ -76,7 +76,7 @@ export default function Campus({ universityId, lang = 'ar', mode = 'home', shot,
       {showLive ? (
         <SceneBoundary onFail={drop3D}>
           <React.Suspense fallback={<CampusStill phase={phase} layout={layout} lang={lang} />}>
-            <Scene composition={composition} sky={sky} shot={view} layout={layout} still={still} onApi={onApi} onContextLost={drop3D} />
+            <Scene composition={composition} sky={sky} shot={view} track={track} layout={layout} still={still} onApi={onApi} onContextLost={drop3D} />
           </React.Suspense>
         </SceneBoundary>
       ) : (
