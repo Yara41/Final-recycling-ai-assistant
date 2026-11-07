@@ -60,8 +60,8 @@ export const SNAPSHOT = {
   open_reports: [{ location_id: 'l1', issue: 'contaminated', contamination_pct: 45 }],
 };
 
-export async function openApp(browser, backend, { speech = true, lang = 'en', reducedMotion = 'reduce', query = '', viewport, snap = false } = {}) {
-  const context = await browser.newContext({ reducedMotion, ...(viewport ? { viewport } : {}) });
+export async function openApp(browser, backend, { speech = true, lang = 'en', reducedMotion = 'reduce', query = '', viewport, snap = false, device } = {}) {
+  const context = await browser.newContext({ ...(device ?? {}), reducedMotion, ...(viewport ? { viewport } : {}) });
   const page = await context.newPage();
   const state = { profile: backend.profile ?? null, agentCalls: [], rpc: [] };
   await page.addInitScript(({ speech, lang, snap }) => {

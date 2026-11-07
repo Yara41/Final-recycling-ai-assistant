@@ -6,9 +6,9 @@
 .home-campus { position: fixed; inset: 0; z-index: 0; }
 .home-scrim {
   position: fixed; inset: 0; z-index: 1; pointer-events: none;
-  background: linear-gradient(0deg, color-mix(in srgb, var(--paper) 94%, transparent) 0%, color-mix(in srgb, var(--paper) 55%, transparent) 42%, transparent 62%);
+  background: linear-gradient(0deg, color-mix(in srgb, var(--paper) 96%, transparent) 0%, color-mix(in srgb, var(--paper) 82%, transparent) 34%, color-mix(in srgb, var(--paper) 40%, transparent) 52%, transparent 66%);
 }
-:root.dark .home-scrim { background: linear-gradient(0deg, rgba(5, 10, 25, .84) 0%, rgba(5, 10, 25, .38) 42%, transparent 62%); }
+:root.dark .home-scrim { background: linear-gradient(0deg, rgba(5, 10, 25, .9) 0%, rgba(5, 10, 25, .7) 34%, rgba(5, 10, 25, .3) 52%, transparent 66%); }
 @media (min-width: 900px) {
   .home-scrim { background: linear-gradient(270deg, color-mix(in srgb, var(--paper) 88%, transparent) 0%, color-mix(in srgb, var(--paper) 32%, transparent) 40%, transparent 60%); }
   :root.dark .home-scrim { background: linear-gradient(270deg, rgba(5, 10, 25, .72) 0%, rgba(5, 10, 25, .26) 40%, transparent 60%); }
@@ -21,11 +21,27 @@
   padding-inline: max(20px, env(safe-area-inset-left, 0px)) max(20px, env(safe-area-inset-right, 0px));
 }
 .screen-text { align-self: flex-end; width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+/* One swipe, one screen: the page settles on each screen and its text rises in. */
+html.snap-home { scroll-snap-type: y mandatory; }
+.screen { scroll-snap-align: start; scroll-snap-stop: always; }
+.home .site-footer { scroll-snap-align: end; }
+.screen-text > * { transition: opacity .55s ease, transform .7s cubic-bezier(.2, .7, .2, 1); }
+.screen:not(.active) .screen-text > * { opacity: 0; transform: translateY(18px); }
+.screen.active .screen-text > :nth-child(2) { transition-delay: .06s; }
+.screen.active .screen-text > :nth-child(3) { transition-delay: .12s; }
+.screen.active .screen-text > :nth-child(4) { transition-delay: .18s; }
+@media (prefers-reduced-motion: reduce) {
+  .screen-text > * { transition: none; }
+  .screen:not(.active) .screen-text > * { opacity: 1; transform: none; }
+}
 @media (min-width: 900px) { .screen { padding-inline: 7vw; } .screen-text { align-self: center; } }
 .screen h1, .screen h2 { font-family: var(--display); font-weight: 700; line-height: 1.15; text-wrap: balance; overflow-wrap: anywhere; }
 .screen h1 { font-size: clamp(36px, 9vw, 76px); }
 .screen h2 { font-size: clamp(30px, 7.6vw, 60px); }
 .screen em { font-style: normal; color: var(--leaf); }
+/* A soft halo keeps the lines readable where the scrim thins out (short phones). */
+.screen .kicker, .screen h1, .screen h2 { text-shadow: 0 0 14px color-mix(in srgb, var(--paper) 90%, transparent), 0 0 3px color-mix(in srgb, var(--paper) 70%, transparent); }
+:root.dark .screen .kicker, :root.dark .screen h1, :root.dark .screen h2 { text-shadow: 0 0 14px rgba(5, 10, 25, .85), 0 0 3px rgba(5, 10, 25, .6); }
 :root.dark .screen em { color: var(--lime); }
 .screen p { color: var(--muted); font-size: clamp(15px, 3.8vw, 18px); max-width: 40ch; }
 .screen-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
